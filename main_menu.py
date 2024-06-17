@@ -38,7 +38,7 @@ window.title("Menu Principal")
 window.geometry("1920x1080")
 
 # Carregando o GIF
-imgs = load_gif("assets/giff.gif")
+imgs = load_gif("assets/menu/giff.gif")
 
 # Criando o canvas para o GIF
 canvas_gif = tk.Canvas(window, width=1920, height=1080)

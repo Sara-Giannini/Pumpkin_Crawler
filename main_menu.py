@@ -61,14 +61,14 @@ atualizar_gif()
 
 # Carregando as imagens dos botões
 img_start = ImageTk.PhotoImage(file="assets/bnt_start.png")
-img_sair = ImageTk.PhotoImage(file="assets/bnt_sair.png")
+img_sair = ImageTk.PhotoImage(file="assets/bnt_quit.png")
 
 # Criando os botões
 btn_start = tk.Button(window, image=img_start, command=start, borderwidth=0, highlightthickness=0)
 btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)
 
-btn_sair = tk.Button(window, image=img_sair, command=sair, borderwidth=0, highlightthickness=0)
-btn_sair.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
+bnt_quit = tk.Button(window, image=img_sair, command=sair, borderwidth=0, highlightthickness=0)
+bnt_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
 
 # Executando a interface
 window.mainloop()

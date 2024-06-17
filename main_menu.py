@@ -1,8 +1,9 @@
 import tkinter as tk
 from PIL import Image, ImageSequence, ImageTk
+import quest1  # Importando o módulo do jogo "Quest 1"
 
 # Carregando o GIF
-def carregar_gif(gif_path):
+def load_gif(gif_path):
     """
     Carrega um GIF e o retorna como uma sequência de imagens PhotoImage.
 
@@ -22,12 +23,12 @@ def carregar_gif(gif_path):
 
 # Função para Start
 def start():
-    # Implementar a lógica para iniciar o jogo
-    print("Start!")
+    # Fecha a janela do menu principal e inicia a partida
+    window.destroy()
+    quest1.start_game()
 
 # Função para sair
-def sair():
-    # Implementar a lógica para sair do jogo
+def quit():
     print("Saindo...")
     window.destroy()
 
@@ -37,7 +38,7 @@ window.title("Menu Principal")
 window.geometry("1920x1080")
 
 # Carregando o GIF
-imgs = carregar_gif("assets/giff.gif")
+imgs = load_gif("assets/giff.gif")
 
 # Criando o canvas para o GIF
 canvas_gif = tk.Canvas(window, width=1920, height=1080)
@@ -48,27 +49,27 @@ label_gif = tk.Label(canvas_gif, image=imgs[0])
 label_gif.pack()
 
 # Atualizando o GIF a cada 100ms
-indice_gif = 0
-def atualizar_gif():
-    global indice_gif, imgs
-    if indice_gif == len(imgs):
-        indice_gif = 0
-    label_gif.configure(image=imgs[indice_gif])
-    indice_gif += 1
-    window.after(100, atualizar_gif)
+index_gif = 0
+def update_gif():
+    global index_gif, imgs
+    if index_gif == len(imgs):
+        index_gif = 0
+    label_gif.configure(image=imgs[index_gif])
+    index_gif += 1
+    window.after(100, update_gif)
 
-atualizar_gif()
+update_gif()
 
 # Carregando as imagens dos botões
 img_start = ImageTk.PhotoImage(file="assets/bnt_start.png")
-img_sair = ImageTk.PhotoImage(file="assets/bnt_quit.png")
+img_quit = ImageTk.PhotoImage(file="assets/bnt_quit.png")
 
 # Criando os botões
 btn_start = tk.Button(window, image=img_start, command=start, borderwidth=0, highlightthickness=0)
 btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)
 
-bnt_quit = tk.Button(window, image=img_sair, command=sair, borderwidth=0, highlightthickness=0)
-bnt_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
+btn_quit = tk.Button(window, image=img_quit, command=quit, borderwidth=0, highlightthickness=0)
+btn_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
 
 # Executando a interface
 window.mainloop()

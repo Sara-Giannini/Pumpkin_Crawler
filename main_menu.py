@@ -61,8 +61,8 @@ def update_gif():
 update_gif()
 
 # Carregando as imagens dos botões
-img_start = ImageTk.PhotoImage(file="assets/bnt_start.png")
-img_quit = ImageTk.PhotoImage(file="assets/bnt_quit.png")
+img_start = ImageTk.PhotoImage(file="assets/menu/bnt_start.png")
+img_quit = ImageTk.PhotoImage(file="assets/menu/bnt_quit.png")
 
 # Criando os botões
 btn_start = tk.Button(window, image=img_start, command=start, borderwidth=0, highlightthickness=0)

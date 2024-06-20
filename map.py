@@ -1,0 +1,117 @@
+import tkinter as tk
+import PIL
+from PIL import Image, ImageTk
+
+TILE_SIZE = 64
+X_OFFSET = 0  # Adicione o ajuste do eixo X
+Y_OFFSET = 0  # Adicione o ajuste do eixo Y
+
+MAP = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+]
+
+individual_images = {
+    "floor_7": {"file": "assets/tileset/floor_7.png", "position": (7, 3, 26, 28)},
+    "wall_7": {"file": "assets/tileset/wall_7.png", "position": (7, 3, 26, -30)},
+    "wall_1": {"file": "assets/tileset/wall_1.png", "position": (5, 5, -5, 0)},
+    "floor_1": {"file": "assets/tileset/floor_1.png", "position": (5, 6, -5, -10)},
+    "floor_2": {"file": "assets/tileset/floor_2.png", "position": (5, 8, -5, -10)},
+    "wall_2": {"file": "assets/tileset/wall_2.png", "position": (5, 7, -5, 0)},
+    "floor_3": {"file": "assets/tileset/floor_3.png", "position": (8, 7, -10, 20)},
+    "patch": {"file": "assets/tileset/patch.png", "position": (7, 8, 20, 10)},
+    "wall_3": {"file": "assets/tileset/wall_3.png", "position": (8, 7, -10, 0)},
+    "wall_4": {"file": "assets/tileset/wall_4.png", "position": (8, 7, 31, -30)},
+    "wall_5": {"file": "assets/tileset/wall_5.png", "position": (10, 7, -10, 0)},
+    "floor_4": {"file": "assets/tileset/floor_4.png", "position": (10, 8, -10, -10)},
+    "sink": {"file": "assets/tileset/sink.png", "position": (10, 8, 25, -25)},
+    "floor_5": {"file": "assets/tileset/floor_5.png", "position": (11, 5, -2, -28)},
+    "stairs": {"file": "assets/tileset/stairs.png", "position": (11, 7, -2, -18)},
+    "wall_6": {"file": "assets/tileset/wall_6.png", "position": (11, 4, -2, -18)},
+}
+
+interaction_element = {
+    "lever_up": {"file": "assets/tileset/lever_up.png", "position": (10, 7, -30, 0), "type": "lever"},
+    "lever_down": {"file": "assets/tileset/lever_down.png", "position": (10, 7, -30, 0), "type": "lever"},
+    "gate_closed": {"file": "assets/tileset/gate_closed.png", "position": (9, 7, -10, -12), "type": "gate"},
+    "gate_open": {"file": "assets/tileset/gate_open.png", "position": (9, 7, -10, -12), "type": "gate"},
+}
+
+def create_map(canvas):
+    for item, info in individual_images.items():
+        img = Image.open(info["file"])
+        # img = img.resize((TILE_SIZE, TILE_SIZE), PIL.Image.LANCZOS)  # Remova o redimensionamento
+        img = ImageTk.PhotoImage(img)
+        canvas.create_image(
+            info["position"][0] * TILE_SIZE + info["position"][2] + X_OFFSET,
+            info["position"][1] * TILE_SIZE + info["position"][3] + Y_OFFSET,
+            image=img, anchor="nw"
+        )
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.append(img)
+
+def create_interactive_elements(canvas, lever_state, gate_state):
+    lever_info = interaction_element[lever_state]
+    gate_info = interaction_element[gate_state]
+
+    lever_img = Image.open(lever_info["file"])
+    # lever_img = lever_img.resize((TILE_SIZE, TILE_SIZE), PIL.Image.LANCZOS)  # Remova o redimensionamento
+    lever_img = ImageTk.PhotoImage(lever_img)
+
+    gate_img = Image.open(gate_info["file"])
+    # gate_img = gate_img.resize((TILE_SIZE, TILE_SIZE), PIL.Image.LANCZOS)  # Remova o redimensionamento
+    gate_img = ImageTk.PhotoImage(gate_img)
+
+    lever_id = canvas.create_image(
+        lever_info["position"][0] * TILE_SIZE + lever_info["position"][2] + X_OFFSET,
+        lever_info["position"][1] * TILE_SIZE + lever_info["position"][3] + Y_OFFSET,
+        image=lever_img, anchor="nw", tags=("lever",)
+    )
+
+    gate_id = canvas.create_image(
+        gate_info["position"][0] * TILE_SIZE + gate_info["position"][2] + X_OFFSET,
+        gate_info["position"][1] * TILE_SIZE + gate_info["position"][3] + Y_OFFSET,
+        image=gate_img, anchor="nw", tags=("gate",)
+    )
+
+    if not hasattr(canvas, 'images'):
+        canvas.images = []
+    canvas.images.append(lever_img)
+    canvas.images.append(gate_img)
+
+def update_lever_state(canvas, lever_state):
+    lever_info = interaction_element[lever_state]
+    lever_img = Image.open(lever_info["file"])
+    # lever_img = lever_img.resize((TILE_SIZE, TILE_SIZE), PIL.Image.LANCZOS)  # Remova o redimensionamento
+    lever_img = ImageTk.PhotoImage(lever_img)
+
+    canvas.itemconfig("lever", image=lever_img)
+
+    if not hasattr(canvas, 'images'):
+        canvas.images = []
+    canvas.images.append(lever_img)
+
+def update_gate_state(canvas, gate_state):
+    gate_info = interaction_element[gate_state]
+    gate_img = Image.open(gate_info["file"])
+    # gate_img = gate_img.resize((TILE_SIZE, TILE_SIZE), PIL.Image.LANCZOS)  # Remova o redimensionamento
+    gate_img = ImageTk.PhotoImage(gate_img)
+
+    canvas.itemconfig("gate", image=gate_img)
+
+    if not hasattr(canvas, 'images'):
+        canvas.images = []
+    canvas.images.append(gate_img)
+

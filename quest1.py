@@ -33,20 +33,11 @@ class Game:
         if lever_x <= x <= lever_x + map.TILE_SIZE and lever_y <= y <= lever_y + map.TILE_SIZE:
             self.toggle_lever()
 
-        # Verificando se o clique foi no portão
-        if gate_x <= x <= gate_x + map.TILE_SIZE and gate_y <= y <= gate_y + map.TILE_SIZE:
-            self.toggle_gate()
-
     def toggle_lever(self):
         self.lever_state = "lever_down" if self.lever_state == "lever_up" else "lever_up"
-        self.gate_state = "gate_open" if self.lever_state == "lever_down" else "gate_closed"
+        self.gate_state = "gate_open" if self.gate_state == "gate_closed" else "gate_closed"
 
         map.update_lever_state(self.canvas, self.lever_state)
-        map.update_gate_state(self.canvas, self.gate_state)
-
-    def toggle_gate(self):
-        # Alternar o estado do portão
-        self.gate_state = "gate_open" if self.gate_state == "gate_closed" else "gate_closed"
         map.update_gate_state(self.canvas, self.gate_state)
 
 def start_game():

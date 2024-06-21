@@ -53,10 +53,12 @@ individual_images = {
     "sword": {"file": "assets/tileset/sword.png", "position": (14, 6, -5, -20)},
     "iron": {"file": "assets/tileset/iron.png", "position": (14, 6, -15, 0)},
     "weapons": {"file": "assets/tileset/weapons.png", "position": (13, 4, 0, -5)},
+    "shield": {"file": "assets/tileset/shield.png", "position": (14, 7, -18, -45)},
+
     "crate_1": {"file": "assets/tileset/crate_1.png", "position": (9, 8, 25, 0)},
-    "pillar_1": {"file": "assets/tileset/pillar_1.png", "position": (9, 3, -57, 0)},
-    "pillar_2": {"file": "assets/tileset/pillar_2.png", "position": (9, 3, 55, 0)},
-    "coffin": {"file": "assets/tileset/coffin.png", "position": (9, 3, -10, 0)},
+    "pillar_1": {"file": "assets/tileset/pillar_1.png", "position": (9, 2, -57, 42)},
+    "pillar_2": {"file": "assets/tileset/pillar_2.png", "position": (9, 2, 55, 42)},
+#    "coffin": {"file": "assets/tileset/coffin.png", "position": (9, 3, -10, 0)},
 
 
 

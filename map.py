@@ -27,6 +27,13 @@ individual_images = {
     "wall_7": {"file": "assets/tileset/wall_7.png", "position": (7, 3, 26, -30)},
     "wall_1": {"file": "assets/tileset/wall_1.png", "position": (5, 5, -5, 0)},
     "floor_1": {"file": "assets/tileset/floor_1.png", "position": (5, 6, -5, -10)},
+    "gold_9": {"file": "assets/tileset/gold_9.png", "position": (5, 7, 0, -15)},
+    "gold_1": {"file": "assets/tileset/gold_1.png", "position": (5, 6, 5, -30)},
+    "gold_2": {"file": "assets/tileset/gold_2.png", "position": (7, 6, -5, -15)},
+    "gold_3": {"file": "assets/tileset/gold_3.png", "position": (5, 6, 0, 0)},
+    "gold_4": {"file": "assets/tileset/gold_4.png", "position": (6, 6, -20, 0)},
+    "gold_5": {"file": "assets/tileset/gold_5.png", "position": (6, 6, -10, 10)},
+    "gold_8": {"file": "assets/tileset/gold_8.png", "position": (5, 6, 10, 10)},    
     "floor_2": {"file": "assets/tileset/floor_2.png", "position": (5, 8, -5, -10)},
     "wall_2": {"file": "assets/tileset/wall_2.png", "position": (5, 7, -5, 0)},
     "floor_3": {"file": "assets/tileset/floor_3.png", "position": (8, 7, -10, 20)},
@@ -39,6 +46,20 @@ individual_images = {
     "floor_5": {"file": "assets/tileset/floor_5.png", "position": (11, 5, -2, -28)},
     "stairs": {"file": "assets/tileset/stairs.png", "position": (11, 7, -2, -18)},
     "wall_6": {"file": "assets/tileset/wall_6.png", "position": (11, 4, -2, -18)},
+    "table": {"file": "assets/tileset/table.png", "position": (12, 4, -30, 30)},
+    "chair_2": {"file": "assets/tileset/chair_2.png", "position": (12, 4, 15, 30)},
+    "chair_3": {"file": "assets/tileset/chair_3.png", "position": (11, 4, 15, 30)},
+    "crate_2": {"file": "assets/tileset/crate_2.png", "position": (14, 6, -20, -15)},
+    "sword": {"file": "assets/tileset/sword.png", "position": (14, 6, -5, -20)},
+    "iron": {"file": "assets/tileset/iron.png", "position": (14, 6, -15, 0)},
+    "weapons": {"file": "assets/tileset/weapons.png", "position": (13, 4, 0, -5)},
+    "crate_1": {"file": "assets/tileset/crate_1.png", "position": (9, 8, 25, 0)},
+    "pillar_1": {"file": "assets/tileset/pillar_1.png", "position": (9, 3, -57, 0)},
+    "pillar_2": {"file": "assets/tileset/pillar_2.png", "position": (9, 3, 55, 0)},
+    "coffin": {"file": "assets/tileset/coffin.png", "position": (9, 3, -10, 0)},
+
+
+
 }
 
 interaction_element = {

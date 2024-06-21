@@ -1,6 +1,7 @@
 import tkinter as tk
+from PIL import Image, ImageSequence, ImageTk
 import map
-
+from player import Player
 
 class Game:
     def __init__(self, root):
@@ -18,7 +19,10 @@ class Game:
         map.create_map(self.canvas)
         map.create_interactive_elements(self.canvas, self.lever_state, self.gate_state, self.lock_state, self.door_state)
 
+        self.player = Player(self.canvas, start_position=(0, 0))  # Posição inicial do jogador
+
         self.canvas.bind("<Button-1>", self.handle_click)
+        self.root.bind("<KeyPress>", self.handle_keypress)
 
     def handle_click(self, event):
         x, y = event.x, event.y
@@ -35,6 +39,16 @@ class Game:
             self.toggle_lever()
         elif lock_x <= x <= lock_x + map.TILE_SIZE and lock_y <= y <= lock_y + map.TILE_SIZE:
             self.toggle_lock()
+
+    def handle_keypress(self, event):
+        if event.keysym == "Up":
+            self.player.move_player(0, -1)
+        elif event.keysym == "Down":
+            self.player.move_player(0, 1)
+        elif event.keysym == "Left":
+            self.player.move_player(-1, 0)
+        elif event.keysym == "Right":
+            self.player.move_player(1, 0)
 
     def toggle_lever(self):
         self.lever_state = "lever_down" if self.lever_state == "lever_up" else "lever_up"
@@ -58,8 +72,56 @@ class Game:
             self.special_room_visible = True
             map.toggle_special_room_visibility(self.canvas, visibility="normal")
 
+def load_gif(gif_path):
+    imgs = []
+    with Image.open(gif_path) as img:
+        for frame in ImageSequence.Iterator(img):
+            img_pil = frame.convert('RGB')
+            img_tk = ImageTk.PhotoImage(img_pil)
+            imgs.append(img_tk)
+    return imgs
+
 def start_game():
-    root = tk.Tk()
-    game = Game(root)
-    root.mainloop()
+    window.destroy()
+    game_root = tk.Tk()
+    game = Game(game_root)
+    game_root.mainloop()
+
+def quit_game():
+    print("Saindo...")
+    window.destroy()
+
+window = tk.Tk()
+window.title("Menu Principal")
+window.geometry("1920x1080")
+
+imgs = load_gif("assets/menu/giff.gif")
+
+canvas_gif = tk.Canvas(window, width=1920, height=1080)
+canvas_gif.pack()
+
+label_gif = tk.Label(canvas_gif, image=imgs[0])
+label_gif.pack()
+
+index_gif = 0
+def update_gif():
+    global index_gif, imgs
+    if index_gif == len(imgs):
+        index_gif = 0
+    label_gif.configure(image=imgs[index_gif])
+    index_gif += 1
+    window.after(100, update_gif)
+
+update_gif()
+
+img_start = ImageTk.PhotoImage(file="assets/menu/btn_start.png")
+img_quit = ImageTk.PhotoImage(file="assets/menu/btn_quit.png")
+
+btn_start = tk.Button(window, image=img_start, command=start_game, borderwidth=0, highlightthickness=0)
+btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)
+
+btn_quit = tk.Button(window, image=img_quit, command=quit_game, borderwidth=0, highlightthickness=0)
+btn_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
+
+window.mainloop()
 

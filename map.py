@@ -211,4 +211,3 @@ def update_door_state(canvas, door_state):
     if not hasattr(canvas, 'images'):
         canvas.images = []
     canvas.images.append(door_img)
-

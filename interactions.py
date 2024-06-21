@@ -21,7 +21,7 @@ class InteractionHandler:
     def setup_initial_state(self):
         # Desenha todos os elementos iniciais (exceto a alavanca e a porta)
         for key, data in self.individual_images.items():
-            if key not in ["lever_up", "lever_down", "door_2_closed", "door_2_open"]:
+            if key not in ["lever_up", "lever_down", "gate_closed", "gate_open"]:
                 image_file = data["file"]
                 x, y, offset_x, offset_y = data["position"]
                 adjusted_x = x * TILE_SIZE + offset_x
@@ -31,7 +31,7 @@ class InteractionHandler:
                 self.individual_images[key]["image"] = image
 
         # Inicializa com a porta fechada e a alavanca para cima
-        self.toggle_door("door_2_closed")
+        self.toggle_gate("gate_closed")
         self.toggle_lever("lever_up")
 
     def handle_interaction(self, event, player_x, player_y):
@@ -60,21 +60,21 @@ class InteractionHandler:
 
         # Verifica se a alavanca foi movida para baixo
         if lever_key == "lever_up" and not lever_data["locked"]:
-            self.open_door()
+            self.open_gate()
 
-    def toggle_door(self, door_key):
-        door_data = self.individual_images[door_key]
-        door_image_file = door_data["file"]
-        x, y, offset_x, offset_y = door_data["position"]
+    def toggle_gate(self, gate_key):
+        gate_data = self.individual_images[gate_key]
+        gate_image_file = gate_data["file"]
+        x, y, offset_x, offset_y = gate_data["position"]
         adjusted_x = x * TILE_SIZE + offset_x
         adjusted_y = y * TILE_SIZE + offset_y
-        door_image = tk.PhotoImage(file=door_image_file)
-        self.game_canvas.create_image(adjusted_x, adjusted_y, image=door_image, anchor=tk.SW)
-        self.individual_images[door_key]["image"] = door_image
+        gate_image = tk.PhotoImage(file=gate_image_file)
+        self.game_canvas.create_image(adjusted_x, adjusted_y, image=gate_image, anchor=tk.SW)
+        self.individual_images[gate_key]["image"] = gate_image
 
-    def open_door(self):
-        self.toggle_door("door_2_open")
-        self.individual_images["door_2_closed"]["locked"] = False
+    def open_gate(self):
+        self.toggle_gate("gate_open")
+        self.individual_images["gate_closed"]["locked"] = False
         self.individual_images["lever_up"]["locked"] = False
         self.toggle_lever("lever_down")
 

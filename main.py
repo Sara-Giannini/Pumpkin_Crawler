@@ -3,6 +3,7 @@ from PIL import Image, ImageSequence, ImageTk
 import map
 from player import Player
 
+
 class Game:
     def __init__(self, root):
         self.root = root
@@ -10,8 +11,7 @@ class Game:
         self.canvas.pack()
 
         self.player_x = 25
-        self.player_y = 8 
-
+        self.player_y = 8
 
         self.lever_state = "lever_up"
         self.gate_state = "gate_closed"
@@ -44,20 +44,30 @@ class Game:
         lock_x = lock_info["position"][0] * map.TILE_SIZE + lock_info["position"][2] + map.X_OFFSET
         lock_y = lock_info["position"][1] * map.TILE_SIZE + lock_info["position"][3] + map.Y_OFFSET
 
-        if lever_x <= x <= lever_x + map.TILE_SIZE and lever_y <= y <= lever_y + map.TILE_SIZE:
+        if self.is_near_player(lever_x, lever_y) and lever_x <= x <= lever_x + map.TILE_SIZE and lever_y <= y <= lever_y + map.TILE_SIZE:
             self.toggle_lever()
-        elif lock_x <= x <= lock_x + map.TILE_SIZE and lock_y <= y <= lock_y + map.TILE_SIZE:
+        elif self.is_near_player(lock_x, lock_y) and lock_x <= x <= lock_x + map.TILE_SIZE and lock_y <= y <= lock_y + map.TILE_SIZE:
             self.toggle_lock()
 
     def handle_keypress(self, event):
-        if event.keysym == "Up":
-            self.player.move_player(0, -1)
-        elif event.keysym == "Down":
-            self.player.move_player(0, 1)
-        elif event.keysym == "Left":
-            self.player.move_player(-1, 0)
-        elif event.keysym == "Right":
-            self.player.move_player(1, 0)
+        new_x, new_y = self.player_x, self.player_y
+
+        if event.keysym == 'Up':
+            new_y -= 1
+        elif event.keysym == 'Down':
+            new_y += 1
+        elif event.keysym == 'Left':
+            new_x -= 1
+        elif event.keysym == 'Right':
+            new_x += 1
+
+        if self.is_valid_move(new_x, new_y):
+            self.player_x, self.player_y = new_x, new_y
+            self.canvas.coords(
+                self.player,
+                self.player_x * map.TILE_SIZE + map.X_OFFSET,
+                self.player_y * map.TILE_SIZE + map.Y_OFFSET
+            )
 
     def toggle_lever(self):
         self.lever_state = "lever_down" if self.lever_state == "lever_up" else "lever_up"
@@ -81,29 +91,6 @@ class Game:
             self.special_room_visible = True
             map.toggle_special_room_visibility(self.canvas, visibility="normal")
 
-    
-    def handle_keypress(self, event):
-        new_x, new_y = self.player_x, self.player_y
-
-        if event.keysym == 'Up':
-            new_y -= 1
-        elif event.keysym == 'Down':
-            new_y += 1
-        elif event.keysym == 'Left':
-            new_x -= 1
-        elif event.keysym == 'Right':
-            new_x += 1
-
-        if self.is_valid_move(new_x, new_y):
-            self.player_x, self.player_y = new_x, new_y
-            self.canvas.coords(
-                self.player,
-                self.player_x * map.TILE_SIZE + map.X_OFFSET,
-                self.player_y * map.TILE_SIZE + map.Y_OFFSET
-            )
-
-
-
     def is_valid_move(self, x, y):
         # Verificar se a posição está dentro dos limites do mapa
         if 0 <= x < len(map.MAP[0]) and 0 <= y < len(map.MAP):
@@ -111,6 +98,11 @@ class Game:
             return map.MAP[y][x] == 1
         return False
 
+    def is_near_player(self, element_x, element_y, max_distance=64):
+        player_px = self.player_x * map.TILE_SIZE + map.X_OFFSET
+        player_py = self.player_y * map.TILE_SIZE + map.Y_OFFSET
+        distance = ((player_px - element_x) ** 2 + (player_py - element_y) ** 2) ** 0.5
+        return distance <= max_distance
 
 
 def load_gif(gif_path):

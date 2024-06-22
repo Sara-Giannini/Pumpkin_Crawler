@@ -2,71 +2,83 @@ import tkinter as tk
 import PIL
 from PIL import Image, ImageTk
 
-TILE_SIZE = 64
+TILE_SIZE = 32
 X_OFFSET = 0  # Ajuste do eixo X
 Y_OFFSET = 0  # Ajuste do eixo Y
 
+
 MAP = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 
+
 individual_images = {
-    "wall_1": {"file": "assets/tileset/wall_1.png", "position": (5, 5, -5, 0)},
-    "floor_1": {"file": "assets/tileset/floor_1.png", "position": (5, 6, -5, -10)},
-    "gold_9": {"file": "assets/tileset/gold_9.png", "position": (5, 7, 0, -15)},
-    "gold_1": {"file": "assets/tileset/gold_1.png", "position": (5, 6, 5, -30)},
-    "gold_2": {"file": "assets/tileset/gold_2.png", "position": (7, 6, -5, -15)},
-    "gold_3": {"file": "assets/tileset/gold_3.png", "position": (5, 6, 0, 0)},
-    "gold_4": {"file": "assets/tileset/gold_4.png", "position": (6, 6, -20, 0)},
-    "gold_5": {"file": "assets/tileset/gold_5.png", "position": (6, 6, -10, 10)},
-    "gold_8": {"file": "assets/tileset/gold_8.png", "position": (5, 6, 10, 10)},    
-    "floor_2": {"file": "assets/tileset/floor_2.png", "position": (5, 8, -5, -10)},
-    "floor_3": {"file": "assets/tileset/floor_3.png", "position": (8, 7, -10, 20)},
-    "wall_3": {"file": "assets/tileset/wall_3.png", "position": (7, 7, 27, -15)},
-    "wall_2": {"file": "assets/tileset/wall_2.png", "position": (5, 7, -5, 0)},
-    "floor_4": {"file": "assets/tileset/floor_4.png", "position": (11, 8, -22, -20)},
-    "patch": {"file": "assets/tileset/patch.png", "position": (7, 8, 20, 10)},
-    "wall_4": {"file": "assets/tileset/wall_4.png", "position": (8, 7, 31, -30)},
-    "floor_5": {"file": "assets/tileset/floor_5.png", "position": (12, 5, -15, -35)},
-    "stairs": {"file": "assets/tileset/stairs.png", "position": (12, 7, -15, -28)},
-    "wall_5": {"file": "assets/tileset/wall_5.png", "position": (11, 7, -22, -15)},
-    "sink": {"file": "assets/tileset/sink.png", "position": (11, 8, 10, -37)},
-    "wall_6": {"file": "assets/tileset/wall_6.png", "position": (12, 4, -15, -28)},
-    "table": {"file": "assets/tileset/table.png", "position": (13, 4, -30, 20)},
-    "chair_2": {"file": "assets/tileset/chair_2.png", "position": (13, 4, 15, 20)},
-    "chair_3": {"file": "assets/tileset/chair_3.png", "position": (12, 4, 15, 20)},
-    "crate_2": {"file": "assets/tileset/crate_2.png", "position": (15, 6, -35, -20)},
-    "sword": {"file": "assets/tileset/sword.png", "position": (15, 6, -25, -25)},
-    "iron": {"file": "assets/tileset/iron.png", "position": (15, 6, -32, 0)},
-    "weapons": {"file": "assets/tileset/weapons.png", "position": (14, 4, -10, -15)},
-    "shield": {"file": "assets/tileset/shield.png", "position": (15, 7, -35, -50)},
-    "crate_1": {"file": "assets/tileset/crate_1.png", "position": (10, 8, 15, 0)},
+    "wall_1": {"file": "assets/tileset/wall_1.png", "position": (5, 10, 0, 20)},
+    "floor_1": {"file": "assets/tileset/floor_1.png", "position": (5, 12, 0, 10)},
+    "gold_9": {"file": "assets/tileset/gold_9.png", "position": (5, 15, 0, -10)},
+    "gold_1": {"file": "assets/tileset/gold_1.png", "position": (5, 12, 0, 0)},
+    "gold_2": {"file": "assets/tileset/gold_2.png", "position": (9, 13, 0, 0)},
+    "gold_3": {"file": "assets/tileset/gold_3.png", "position": (6, 14, 0, 0)},
+    "gold_4": {"file": "assets/tileset/gold_4.png", "position": (7, 14, 0, 0)},
+    "gold_5": {"file": "assets/tileset/gold_5.png", "position": (7, 13, 0, 0)},
+    "gold_8": {"file": "assets/tileset/gold_8.png", "position": (5, 13, 10, 0)},    
+    "floor_2": {"file": "assets/tileset/floor_2.png", "position": (5, 17, 0, 0)},
+    "floor_4": {"file": "assets/tileset/floor_4.png", "position": (19, 15, -7, 7)},
+    "floor_3": {"file": "assets/tileset/floor_3.png", "position": (11, 14, 9, 20)},
+    "wall_3": {"file": "assets/tileset/wall_3.png", "position": (11, 13, 10, 14)},
+    "wall_2": {"file": "assets/tileset/wall_2.png", "position": (5, 15, 0, 10)},
+    "patch": {"file": "assets/tileset/patch.png", "position": (10, 18, -8, -20)},
+    "wall_4": {"file": "assets/tileset/wall_4.png", "position": (14, 12, 14, 30)},
+    "floor_5": {"file": "assets/tileset/floor_5.png", "position": (21, 8, 0, 0)},
+    "stairs": {"file": "assets/tileset/stairs.png", "position": (21, 13, 0, 0)},
+    "wall_5": {"file": "assets/tileset/wall_5.png", "position": (19, 13, -7, 14)},
+    "sink": {"file": "assets/tileset/sink.png", "position": (20, 15, 0, -11)},
+    "wall_6": {"file": "assets/tileset/wall_6.png", "position": (21, 6, 0, 10)},
+    "table": {"file": "assets/tileset/table.png", "position": (22, 8, 0, -5)},
+    "chair_2": {"file": "assets/tileset/chair_2.png", "position": (24, 8, -20, -5)},
+    "chair_3": {"file": "assets/tileset/chair_3.png", "position": (22, 8, -15, -5)},
+    "crate_2": {"file": "assets/tileset/crate_2.png", "position": (27, 11, 0, 0)},
+    "chair_": {"file": "assets/tileset/chair_1.png", "position": (27, 11, -13, 0)},
+    "sword": {"file": "assets/tileset/sword.png", "position": (28, 12, -18, -35)},
+    "iron": {"file": "assets/tileset/iron.png", "position": (28, 12, -30, -20)},
+    "weapons": {"file": "assets/tileset/weapons.png", "position": (25, 6, 0, 20)},
+    "shield": {"file": "assets/tileset/shield.png", "position": (27, 12, 0, 0)},
+    "crate_1": {"file": "assets/tileset/crate_1.png", "position": (18, 17, -10, 10)},
     
 
 }
 
 interaction_element = {
-    "door_closed": {"file": "assets/tileset/door_closed.png", "position": (6, 7, 0, 18), "type": "door"},
-    "door_open": {"file": "assets/tileset/door_open.png", "position": (6, 7, 0, 18), "type": "door"},
-    "lock": {"file": "assets/tileset/lock.png", "position": (7, 7, -25, 30), "type": "lock_key"},
-    "lock_key": {"file": "assets/tileset/lock_key.png", "position": (7, 7, -25, 30), "type": "lock_key"},
+    "door_closed": {"file": "assets/tileset/door_closed.png", "position": (7, 16, 0, -5), "type": "door"},
+    "door_open": {"file": "assets/tileset/door_open.png", "position": (7, 16, 0, -5), "type": "door"},
+    "lock": {"file": "assets/tileset/lock.png", "position": (8, 16, 5, 5), "type": "lock_key"},
+    "lock_key": {"file": "assets/tileset/lock_key.png", "position": (8, 16, 5, 5), "type": "lock_key"},
 
-    "lever_up": {"file": "assets/tileset/lever_up.png", "position": (10, 7, -5, 0), "type": "lever"},
-    "lever_down": {"file": "assets/tileset/lever_down.png", "position": (10, 7, -5, 0), "type": "lever"},
-    "gate_closed": {"file": "assets/tileset/gate_closed.png", "position": (9, 7, 15, -12), "type": "gate"},
-    "gate_open": {"file": "assets/tileset/gate_open.png", "position": (9, 7, 15, -12), "type": "gate"},
+    "lever_up": {"file": "assets/tileset/lever_up.png", "position": (17, 13, 10, 20), "type": "lever"},
+    "lever_down": {"file": "assets/tileset/lever_down.png", "position": (17, 13, 10, 20), "type": "lever"},
+    "gate_closed": {"file": "assets/tileset/gate_closed.png", "position": (16, 13, 0, 15), "type": "gate"},
+    "gate_open": {"file": "assets/tileset/gate_open.png", "position": (16, 13, 0, 15), "type": "gate"},
 
 }
 
@@ -133,15 +145,15 @@ def create_interactive_elements(canvas, lever_state, gate_state, lock_state, doo
 
 
 def create_special_room(canvas, visibility="hidden"):
-    special_room_x_offset = 100 
-    special_room_y_offset = 100  
+    special_room_x_offset = 0
+    special_room_y_offset = 0
 
     special_room_elements = {
-        "floor_7": {"file": "assets/tileset/floor_7.png", "position": (6, 2, -10, -8)},
-        "wall_7": {"file": "assets/tileset/wall_7.png", "position": (6, 1, -10, 0)},
-        "pillar_1": {"file": "assets/tileset/pillar_1.png", "position": (7, 1, -20, 0)},
-        "pillar_2": {"file": "assets/tileset/pillar_2.png", "position": (9, 1, 0, 0)},
-        "coffin": {"file": "assets/tileset/coffin.png", "position": (8, 2, -20, -25)},
+        "floor_7": {"file": "assets/tileset/floor_7.png", "position": (11, 6, 10, 0)},
+        "wall_7": {"file": "assets/tileset/wall_7.png", "position": (11, 4, 10, 10)},
+        "pillar_1": {"file": "assets/tileset/pillar_1.png", "position": (13, 5, -10, -10)},
+        "pillar_2": {"file": "assets/tileset/pillar_2.png", "position": (18, 5, 0, -10)},
+        "coffin": {"file": "assets/tileset/coffin.png", "position": (15, 5, 0, 0)},
     }
 
     special_room_items = []

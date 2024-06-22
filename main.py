@@ -9,6 +9,10 @@ class Game:
         self.canvas = tk.Canvas(self.root, width=1280, height=720, bg='black')
         self.canvas.pack()
 
+        self.player_x = 25
+        self.player_y = 8 
+
+
         self.lever_state = "lever_up"
         self.gate_state = "gate_closed"
         self.lock_state = "lock"
@@ -19,7 +23,12 @@ class Game:
         map.create_map(self.canvas)
         map.create_interactive_elements(self.canvas, self.lever_state, self.gate_state, self.lock_state, self.door_state)
 
-        self.player = Player(self.canvas, start_position=(0, 0))  # Posição inicial do jogador
+        self.player_img = ImageTk.PhotoImage(Image.open("assets/player/player.png"))
+        self.player = self.canvas.create_image(
+            self.player_x * map.TILE_SIZE + map.X_OFFSET,
+            self.player_y * map.TILE_SIZE + map.Y_OFFSET,
+            image=self.player_img, anchor="nw"
+        )
 
         self.canvas.bind("<Button-1>", self.handle_click)
         self.root.bind("<KeyPress>", self.handle_keypress)
@@ -71,6 +80,38 @@ class Game:
         if not self.special_room_visible:
             self.special_room_visible = True
             map.toggle_special_room_visibility(self.canvas, visibility="normal")
+
+    
+    def handle_keypress(self, event):
+        new_x, new_y = self.player_x, self.player_y
+
+        if event.keysym == 'Up':
+            new_y -= 1
+        elif event.keysym == 'Down':
+            new_y += 1
+        elif event.keysym == 'Left':
+            new_x -= 1
+        elif event.keysym == 'Right':
+            new_x += 1
+
+        if self.is_valid_move(new_x, new_y):
+            self.player_x, self.player_y = new_x, new_y
+            self.canvas.coords(
+                self.player,
+                self.player_x * map.TILE_SIZE + map.X_OFFSET,
+                self.player_y * map.TILE_SIZE + map.Y_OFFSET
+            )
+
+
+
+    def is_valid_move(self, x, y):
+        # Verificar se a posição está dentro dos limites do mapa
+        if 0 <= x < len(map.MAP[0]) and 0 <= y < len(map.MAP):
+            # Verificar se a posição é uma tile válida
+            return map.MAP[y][x] == 1
+        return False
+
+
 
 def load_gif(gif_path):
     imgs = []

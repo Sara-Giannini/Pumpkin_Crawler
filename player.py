@@ -16,16 +16,16 @@ class Player:
     def draw_player(self):
         x, y = self.position
         self.player_id = self.canvas.create_image(
-            x * 64, y * 64, image=self.image, anchor="nw", tags="player"
+            x * 32, y * 32, image=self.image, anchor="nw", tags="player"
         )
 
     def move_player(self, dx, dy):
         new_x = self.position[0] + dx
         new_y = self.position[1] + dy
 
-        # Verificar se a nova posição está dentro dos limites do mapa
-        if 0 <= new_x < 20 and 0 <= new_y < 13:  # Supondo um mapa de 20x13 tiles
+
+        if 0 <= new_x < 32 and 0 <= new_y < 32: 
             self.position = (new_x, new_y)
-            self.canvas.move(self.player_id, dx * 64, dy * 64)
+            self.canvas.move(self.player_id, dx * 1, dy * 1)
 
 

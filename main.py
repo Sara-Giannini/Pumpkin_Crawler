@@ -24,11 +24,25 @@ class Game:
 
         self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET)
 
-        self.canvas.bind("<Button-1>", self.handle_click)
+        self.root.bind("<KeyPress>", self.handle_keypress)
+        self.root.bind("<KeyRelease>", self.handle_keyrelease)
+        self.canvas.bind("<Button-1>", self.on_click)
 
-    def handle_click(self, event):
+    def handle_keypress(self, event):
+        if event.keysym == 'e':
+            self.handle_interaction()
+
+    def handle_keyrelease(self, event):
+        pass
+
+    def on_click(self, event):
         x, y = event.x, event.y
+        tile_x = (x - map.X_OFFSET) // map.TILE_SIZE
+        tile_y = (y - map.Y_OFFSET) // map.TILE_SIZE
+        if self.is_valid_move(tile_x, tile_y):
+            self.player.move_towards(tile_x * map.TILE_SIZE + map.X_OFFSET, tile_y * map.TILE_SIZE + map.Y_OFFSET)
 
+    def handle_interaction(self):
         lever_info = map.interaction_element[self.lever_state]
         lever_x = lever_info["position"][0] * map.TILE_SIZE + lever_info["position"][2] + map.X_OFFSET
         lever_y = lever_info["position"][1] * map.TILE_SIZE + lever_info["position"][3] + map.Y_OFFSET
@@ -37,13 +51,10 @@ class Game:
         lock_x = lock_info["position"][0] * map.TILE_SIZE + lock_info["position"][2] + map.X_OFFSET
         lock_y = lock_info["position"][1] * map.TILE_SIZE + lock_info["position"][3] + map.Y_OFFSET
 
-        if self.is_near_player(lever_x, lever_y) and lever_x <= x <= lever_x + map.TILE_SIZE and lever_y <= y <= lever_y + map.TILE_SIZE:
+        if self.is_near_player(lever_x, lever_y):
             self.toggle_lever()
-        elif self.is_near_player(lock_x, lock_y) and lock_x <= x <= lock_x + map.TILE_SIZE and lock_y <= y <= lock_y + map.TILE_SIZE:
+        elif self.is_near_player(lock_x, lock_y):
             self.toggle_lock()
-        else:
-            if self.is_valid_move(int(x / map.TILE_SIZE), int(y / map.TILE_SIZE)):
-                self.player.move_towards(x, y)
 
     def toggle_lever(self):
         self.lever_state = "lever_down" if self.lever_state == "lever_up" else "lever_up"
@@ -73,8 +84,8 @@ class Game:
         return False
 
     def is_near_player(self, element_x, element_y, max_distance=64):
-        player_px = self.player_x * map.TILE_SIZE + map.X_OFFSET
-        player_py = self.player_y * map.TILE_SIZE + map.Y_OFFSET
+        player_px = self.player.x
+        player_py = self.player.y
         distance = ((player_px - element_x) ** 2 + (player_py - element_y) ** 2) ** 0.5
         return distance <= max_distance
 

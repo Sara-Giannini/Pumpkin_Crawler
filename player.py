@@ -1,8 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageSequence, ImageTk
 import math
-import map 
-
+import map
 
 ANIMATIONS = {
     'idle_down': 'assets/player/idle/idle_down.gif',
@@ -14,7 +13,6 @@ ANIMATIONS = {
     'run_right': 'assets/player/run/run_right.gif',
     'run_up': 'assets/player/run/run_up.gif',
 }
-
 
 def load_gif(gif_path):
     imgs = []
@@ -34,7 +32,6 @@ class Player:
         self.target_y = start_y
         self.direction = 'down'
         self.is_moving = False
-
 
         self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items()}
         self.current_animation = self.animations['idle_down']
@@ -62,14 +59,14 @@ class Player:
 
         if not self.is_moving:
             self.is_moving = True
-            self.move_step()
+            self.move_to()
 
-    def move_step(self):
+    def move_to(self):
         if self.is_moving:
             dx = self.target_x - self.x
             dy = self.target_y - self.y
             distance = math.sqrt(dx**2 + dy**2)
-            speed = 3  
+            speed = 3  # Velocidade do movimento
 
             if distance < speed:
                 self.x = self.target_x
@@ -81,7 +78,6 @@ class Player:
                 new_x = self.x + speed * math.cos(angle)
                 new_y = self.y + speed * math.sin(angle)
 
-            
                 if self.is_valid_move(new_x, new_y):
                     self.x = new_x
                     self.y = new_y
@@ -99,7 +95,7 @@ class Player:
 
                 self.current_animation = self.animations[f'run_{self.direction}']
                 self.canvas.coords(self.image, self.x, self.y)
-                self.canvas.after(50, self.move_step)
+                self.canvas.after(50, self.move_to)
 
     def is_valid_move(self, x, y):
         tile_x = int((x - map.X_OFFSET) / map.TILE_SIZE)

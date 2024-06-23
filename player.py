@@ -1,31 +1,110 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+from PIL import Image, ImageSequence, ImageTk
+import math
+import map 
+
+
+ANIMATIONS = {
+    'idle_down': 'assets/player/idle/idle_down.gif',
+    'idle_left': 'assets/player/idle/idle_left.gif',
+    'idle_right': 'assets/player/idle/idle_right.gif',
+    'idle_up': 'assets/player/idle/idle_up.gif',
+    'run_down': 'assets/player/run/run_down.gif',
+    'run_left': 'assets/player/run/run_left.gif',
+    'run_right': 'assets/player/run/run_right.gif',
+    'run_up': 'assets/player/run/run_up.gif',
+}
+
+
+def load_gif(gif_path):
+    imgs = []
+    with Image.open(gif_path) as img:
+        for frame in ImageSequence.Iterator(img):
+            img_pil = frame.convert('RGBA')
+            img_tk = ImageTk.PhotoImage(img_pil)
+            imgs.append(img_tk)
+    return imgs
 
 class Player:
-    def __init__(self, canvas, start_position=(0, 0)):
+    def __init__(self, canvas, start_x, start_y):
         self.canvas = canvas
-        self.position = start_position
-        self.image_file = "assets/player/player.png"  
-        self.load_image()
-        self.draw_player()
+        self.x = start_x
+        self.y = start_y
+        self.target_x = start_x
+        self.target_y = start_y
+        self.direction = 'down'
+        self.is_moving = False
 
-    def load_image(self):
-        self.image = Image.open(self.image_file)
-        self.image = ImageTk.PhotoImage(self.image)
 
-    def draw_player(self):
-        x, y = self.position
-        self.player_id = self.canvas.create_image(
-            x * 32, y * 32, image=self.image, anchor="nw", tags="player"
+        self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items()}
+        self.current_animation = self.animations['idle_down']
+        self.current_frame = 0
+
+        self.image = self.canvas.create_image(
+            self.x, self.y,
+            image=self.current_animation[self.current_frame],
+            anchor='nw'
         )
 
-    def move_player(self, dx, dy):
-        new_x = self.position[0] + dx
-        new_y = self.position[1] + dy
+        self.animate()
 
+    def animate(self):
+        self.current_frame += 1
+        if self.current_frame >= len(self.current_animation):
+            self.current_frame = 0
 
-        if 0 <= new_x < 32 and 0 <= new_y < 32: 
-            self.position = (new_x, new_y)
-            self.canvas.move(self.player_id, dx * 1, dy * 1)
+        self.canvas.itemconfig(self.image, image=self.current_animation[self.current_frame])
+        self.canvas.after(150, self.animate)
 
+    def move_towards(self, target_x, target_y):
+        self.target_x = target_x
+        self.target_y = target_y
+
+        if not self.is_moving:
+            self.is_moving = True
+            self.move_step()
+
+    def move_step(self):
+        if self.is_moving:
+            dx = self.target_x - self.x
+            dy = self.target_y - self.y
+            distance = math.sqrt(dx**2 + dy**2)
+            speed = 3  
+
+            if distance < speed:
+                self.x = self.target_x
+                self.y = self.target_y
+                self.is_moving = False
+                self.current_animation = self.animations[f'idle_{self.direction}']
+            else:
+                angle = math.atan2(dy, dx)
+                new_x = self.x + speed * math.cos(angle)
+                new_y = self.y + speed * math.sin(angle)
+
+            
+                if self.is_valid_move(new_x, new_y):
+                    self.x = new_x
+                    self.y = new_y
+
+                if abs(dx) > abs(dy):
+                    if dx > 0:
+                        self.direction = 'right'
+                    else:
+                        self.direction = 'left'
+                else:
+                    if dy > 0:
+                        self.direction = 'down'
+                    else:
+                        self.direction = 'up'
+
+                self.current_animation = self.animations[f'run_{self.direction}']
+                self.canvas.coords(self.image, self.x, self.y)
+                self.canvas.after(50, self.move_step)
+
+    def is_valid_move(self, x, y):
+        tile_x = int((x - map.X_OFFSET) / map.TILE_SIZE)
+        tile_y = int((y - map.Y_OFFSET) / map.TILE_SIZE)
+        if 0 <= tile_x < len(map.MAP[0]) and 0 <= tile_y < len(map.MAP):
+            return map.MAP[tile_y][tile_x] == 1
+        return False
 

@@ -3,7 +3,6 @@ from PIL import Image, ImageSequence, ImageTk
 import map
 from player import Player
 
-
 class Game:
     def __init__(self, root):
         self.root = root
@@ -23,15 +22,9 @@ class Game:
         map.create_map(self.canvas)
         map.create_interactive_elements(self.canvas, self.lever_state, self.gate_state, self.lock_state, self.door_state)
 
-        self.player_img = ImageTk.PhotoImage(Image.open("assets/player/player.png"))
-        self.player = self.canvas.create_image(
-            self.player_x * map.TILE_SIZE + map.X_OFFSET,
-            self.player_y * map.TILE_SIZE + map.Y_OFFSET,
-            image=self.player_img, anchor="nw"
-        )
+        self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET)
 
         self.canvas.bind("<Button-1>", self.handle_click)
-        self.root.bind("<KeyPress>", self.handle_keypress)
 
     def handle_click(self, event):
         x, y = event.x, event.y
@@ -48,26 +41,9 @@ class Game:
             self.toggle_lever()
         elif self.is_near_player(lock_x, lock_y) and lock_x <= x <= lock_x + map.TILE_SIZE and lock_y <= y <= lock_y + map.TILE_SIZE:
             self.toggle_lock()
-
-    def handle_keypress(self, event):
-        new_x, new_y = self.player_x, self.player_y
-
-        if event.keysym == 'Up':
-            new_y -= 1
-        elif event.keysym == 'Down':
-            new_y += 1
-        elif event.keysym == 'Left':
-            new_x -= 1
-        elif event.keysym == 'Right':
-            new_x += 1
-
-        if self.is_valid_move(new_x, new_y):
-            self.player_x, self.player_y = new_x, new_y
-            self.canvas.coords(
-                self.player,
-                self.player_x * map.TILE_SIZE + map.X_OFFSET,
-                self.player_y * map.TILE_SIZE + map.Y_OFFSET
-            )
+        else:
+            if self.is_valid_move(int(x / map.TILE_SIZE), int(y / map.TILE_SIZE)):
+                self.player.move_towards(x, y)
 
     def toggle_lever(self):
         self.lever_state = "lever_down" if self.lever_state == "lever_up" else "lever_up"
@@ -92,9 +68,7 @@ class Game:
             map.toggle_special_room_visibility(self.canvas, visibility="normal")
 
     def is_valid_move(self, x, y):
-        # Verificar se a posição está dentro dos limites do mapa
         if 0 <= x < len(map.MAP[0]) and 0 <= y < len(map.MAP):
-            # Verificar se a posição é uma tile válida
             return map.MAP[y][x] == 1
         return False
 
@@ -103,7 +77,6 @@ class Game:
         player_py = self.player_y * map.TILE_SIZE + map.Y_OFFSET
         distance = ((player_px - element_x) ** 2 + (player_py - element_y) ** 2) ** 0.5
         return distance <= max_distance
-
 
 def load_gif(gif_path):
     imgs = []
@@ -139,16 +112,14 @@ label_gif.pack()
 index_gif = 0
 def update_gif():
     global index_gif, imgs
-    if index_gif == len(imgs):
-        index_gif = 0
-    label_gif.configure(image=imgs[index_gif])
-    index_gif += 1
+    index_gif = (index_gif + 1) % len(imgs)
+    label_gif.config(image=imgs[index_gif])
     window.after(100, update_gif)
 
 update_gif()
 
-img_start = ImageTk.PhotoImage(file="assets/menu/btn_start.png")
-img_quit = ImageTk.PhotoImage(file="assets/menu/btn_quit.png")
+img_start = tk.PhotoImage(file="assets/menu/btn_start.png")
+img_quit = tk.PhotoImage(file="assets/menu/btn_quit.png")
 
 btn_start = tk.Button(window, image=img_start, command=start_game, borderwidth=0, highlightthickness=0)
 btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)

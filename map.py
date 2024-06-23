@@ -3,8 +3,8 @@ import PIL
 from PIL import Image, ImageTk
 
 TILE_SIZE = 32
-X_OFFSET = 0  # Ajuste do eixo X
-Y_OFFSET = 0  # Ajuste do eixo Y
+X_OFFSET = 0  
+Y_OFFSET = 0  
 
 
 MAP = [
@@ -139,8 +139,6 @@ def create_interactive_elements(canvas, lever_state, gate_state, lock_state, doo
     if not hasattr(canvas, 'images'):
         canvas.images = []
     canvas.images.extend([lever_img, gate_img, lock_img, door_img])
-
-
 
 
 def create_special_room(canvas, visibility="hidden"):

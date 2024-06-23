@@ -103,4 +103,3 @@ class Player:
         if 0 <= tile_x < len(map.MAP[0]) and 0 <= tile_y < len(map.MAP):
             return map.MAP[tile_y][tile_x] == 1
         return False
-

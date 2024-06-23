@@ -65,21 +65,20 @@ individual_images = {
     "weapons": {"file": "assets/tileset/weapons.png", "position": (25, 6, 0, 20)},
     "shield": {"file": "assets/tileset/shield.png", "position": (27, 12, 0, 0)},
     "crate_1": {"file": "assets/tileset/crate_1.png", "position": (18, 17, -10, 10)},
-    
-
 }
 
 interaction_element = {
+    "lock_key": {"file": "assets/tileset/lock_key.png", "position": (8, 16, 5, 5), "type": "lock_key"},
+    "lock": {"file": "assets/tileset/lock.png", "position": (8, 16, 5, 5), "type": "lock_key"},
     "door_closed": {"file": "assets/tileset/door_closed.png", "position": (7, 16, 0, -5), "type": "door"},
     "door_open": {"file": "assets/tileset/door_open.png", "position": (7, 16, 0, -5), "type": "door"},
-    "lock": {"file": "assets/tileset/lock.png", "position": (8, 16, 5, 5), "type": "lock_key"},
-    "lock_key": {"file": "assets/tileset/lock_key.png", "position": (8, 16, 5, 5), "type": "lock_key"},
-
+    
     "lever_up": {"file": "assets/tileset/lever_up.png", "position": (17, 13, 10, 20), "type": "lever"},
     "lever_down": {"file": "assets/tileset/lever_down.png", "position": (17, 13, 10, 20), "type": "lever"},
     "gate_closed": {"file": "assets/tileset/gate_closed.png", "position": (16, 13, 0, 15), "type": "gate"},
     "gate_open": {"file": "assets/tileset/gate_open.png", "position": (16, 13, 0, 15), "type": "gate"},
 }
+
 
 def create_map(canvas):
     for item, info in individual_images.items():

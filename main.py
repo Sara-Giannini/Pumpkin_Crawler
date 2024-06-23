@@ -3,6 +3,7 @@ from PIL import Image, ImageSequence, ImageTk
 import map
 from player import Player
 
+
 class Game:
     def __init__(self, root):
         self.root = root
@@ -25,15 +26,14 @@ class Game:
         self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET)
 
         self.root.bind("<KeyPress>", self.handle_keypress)
-        self.root.bind("<KeyRelease>", self.handle_keyrelease)
         self.canvas.bind("<Button-1>", self.on_click)
+
+        self.update_map_for_states()
 
     def handle_keypress(self, event):
         if event.keysym == 'e':
             self.handle_interaction()
 
-    def handle_keyrelease(self, event):
-        pass
 
     def on_click(self, event):
         x, y = event.x, event.y
@@ -63,6 +63,8 @@ class Game:
         map.update_lever_state(self.canvas, self.lever_state)
         map.update_gate_state(self.canvas, self.gate_state)
 
+        self.update_map_for_states()
+
         if self.lever_state == "lever_down":
             self.show_special_room()
 
@@ -73,14 +75,27 @@ class Game:
         map.update_lock_state(self.canvas, self.lock_state)
         map.update_door_state(self.canvas, self.door_state)
 
+        self.update_map_for_states()
+
     def show_special_room(self):
         if not self.special_room_visible:
             self.special_room_visible = True
             map.toggle_special_room_visibility(self.canvas, visibility="normal")
 
+    def update_map_for_states(self):
+        gate_pos = map.interaction_element["gate_closed"]["position"]
+        door_pos = map.interaction_element["door_closed"]["position"]
+
+        gate_x, gate_y = gate_pos[0], gate_pos[1]
+        door_x, door_y = door_pos[0], door_pos[1]
+
+        map.MAP[gate_y][gate_x] = 0 if self.gate_state == "gate_closed" else 1
+        map.MAP[door_y][door_x] = 0 if self.door_state == "door_closed" else 1
+
     def is_valid_move(self, x, y):
         if 0 <= x < len(map.MAP[0]) and 0 <= y < len(map.MAP):
-            return map.MAP[y][x] == 1
+            if map.MAP[y][x] == 1:
+                return True
         return False
 
     def is_near_player(self, element_x, element_y, max_distance=64):
@@ -88,6 +103,7 @@ class Game:
         player_py = self.player.y
         distance = ((player_px - element_x) ** 2 + (player_py - element_y) ** 2) ** 0.5
         return distance <= max_distance
+
 
 def load_gif(gif_path):
     imgs = []
@@ -98,27 +114,34 @@ def load_gif(gif_path):
             imgs.append(img_tk)
     return imgs
 
+
 def start_game():
     window.destroy()
     game_root = tk.Tk()
     game = Game(game_root)
     game_root.mainloop()
 
+
 def quit_game():
     print("Saindo...")
     window.destroy()
+
 
 window = tk.Tk()
 window.title("Menu Principal")
 window.geometry("1920x1080")
 
+
 imgs = load_gif("assets/menu/giff.gif")
+
 
 canvas_gif = tk.Canvas(window, width=1920, height=1080)
 canvas_gif.pack()
 
+
 label_gif = tk.Label(canvas_gif, image=imgs[0])
 label_gif.pack()
+
 
 index_gif = 0
 def update_gif():
@@ -127,16 +150,21 @@ def update_gif():
     label_gif.config(image=imgs[index_gif])
     window.after(100, update_gif)
 
+
 update_gif()
+
 
 img_start = tk.PhotoImage(file="assets/menu/btn_start.png")
 img_quit = tk.PhotoImage(file="assets/menu/btn_quit.png")
 
+
 btn_start = tk.Button(window, image=img_start, command=start_game, borderwidth=0, highlightthickness=0)
 btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)
 
+
 btn_quit = tk.Button(window, image=img_quit, command=quit_game, borderwidth=0, highlightthickness=0)
 btn_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
+
 
 window.mainloop()
 

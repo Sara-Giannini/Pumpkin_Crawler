@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 from PIL import Image, ImageSequence, ImageTk
 import map
@@ -27,6 +28,7 @@ class Game:
 
         self.root.bind("<KeyPress>", self.handle_keypress)
         self.canvas.bind("<Button-1>", self.on_click)
+        self.canvas.bind("<Button-3>", self.on_right_click)
 
         self.update_map_for_states()
 
@@ -43,6 +45,8 @@ class Game:
         if self.is_valid_move(tile_x, tile_y):
             self.player.move_towards(tile_x * map.TILE_SIZE + map.X_OFFSET, tile_y * map.TILE_SIZE + map.Y_OFFSET)
 
+    def on_right_click(self, event):
+        self.player.attack()
 
     def handle_interaction(self):
         lever_info = map.interactions[self.lever_state]
@@ -105,6 +109,9 @@ class Game:
                 return True
         return False
 
+    def is_near_player(self, x, y):
+        distance = math.sqrt((self.player.x - x)**2 + (self.player.y - y)**2)
+        return distance < 50
 
     def is_near_player(self, element_x, element_y, max_distance=64):
         player_px = self.player.x

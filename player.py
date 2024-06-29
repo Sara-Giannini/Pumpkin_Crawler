@@ -12,15 +12,24 @@ ANIMATIONS = {
     'run_left': 'assets/player/run/run_left.gif',
     'run_right': 'assets/player/run/run_right.gif',
     'run_up': 'assets/player/run/run_up.gif',
+    'attack_down': 'assets/player/attack/attack_down.gif',
+    'attack_left': 'assets/player/attack/attack_left.gif',
+    'attack_right': 'assets/player/attack/attack_right.gif',
+    'attack_up': 'assets/player/attack/attack_up.gif',
 }
 
 def load_gif(gif_path):
     imgs = []
-    with Image.open(gif_path) as img:
-        for frame in ImageSequence.Iterator(img):
-            img_pil = frame.convert('RGBA')
-            img_tk = ImageTk.PhotoImage(img_pil)
-            imgs.append(img_tk)
+    try:
+        with Image.open(gif_path) as img:
+            for frame in ImageSequence.Iterator(img):
+                img_pil = frame.convert('RGBA')
+                img_tk = ImageTk.PhotoImage(img_pil)
+                imgs.append(img_tk)
+        if not imgs:
+            raise ValueError(f"Erro: Nenhum frame carregado para {gif_path}")
+    except Exception as e:
+        print(f"Erro ao carregar GIF {gif_path}: {e}")
     return imgs
 
 class Player:
@@ -32,8 +41,12 @@ class Player:
         self.target_y = start_y
         self.direction = 'down'
         self.is_moving = False
+        self.is_attacking = False
 
         self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items()}
+        for key, anim in self.animations.items():
+            if not anim:
+                print(f"Erro: Animação {key} não carregada corretamente")
         self.current_animation = self.animations['idle_down']
         self.current_frame = 0
 
@@ -49,6 +62,9 @@ class Player:
         self.current_frame += 1
         if self.current_frame >= len(self.current_animation):
             self.current_frame = 0
+            if self.is_attacking:
+                self.is_attacking = False
+                self.current_animation = self.animations[f'idle_{self.direction}']
 
         self.canvas.itemconfig(self.image, image=self.current_animation[self.current_frame])
         self.canvas.after(150, self.animate)
@@ -103,3 +119,10 @@ class Player:
         if 0 <= tile_x < len(map.MAP[0]) and 0 <= tile_y < len(map.MAP):
             return map.MAP[tile_y][tile_x] == 1
         return False
+
+    def attack(self):
+        if not self.is_attacking:
+            self.is_attacking = True
+            self.current_animation = self.animations[f'attack_{self.direction}']
+            self.current_frame = 0
+            print(f"Iniciando ataque na direção {self.direction} com {len(self.current_animation)} frames")

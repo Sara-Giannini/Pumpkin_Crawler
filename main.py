@@ -15,13 +15,13 @@ class Game:
 
         self.lever_state = "lever_up"
         self.gate_state = "gate_closed"
-        self.lock_state = "lock"
+        self.lock_state = "keyless_lock"
         self.door_state = "door_closed"
-        self.special_room_visible = False
+        self.boss_room_visible = False
 
-        map.create_special_room(self.canvas, visibility="hidden")
+        map.create_boss_room(self.canvas, visibility="hidden")
         map.create_map(self.canvas)
-        map.create_interactive_elements(self.canvas, self.lever_state, self.gate_state, self.lock_state, self.door_state)
+        map.create_interactions(self.canvas, self.lever_state, self.gate_state, self.lock_state, self.door_state)
 
         self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET)
 
@@ -29,6 +29,7 @@ class Game:
         self.canvas.bind("<Button-1>", self.on_click)
 
         self.update_map_for_states()
+
 
     def handle_keypress(self, event):
         if event.keysym == 'e':
@@ -42,12 +43,13 @@ class Game:
         if self.is_valid_move(tile_x, tile_y):
             self.player.move_towards(tile_x * map.TILE_SIZE + map.X_OFFSET, tile_y * map.TILE_SIZE + map.Y_OFFSET)
 
+
     def handle_interaction(self):
-        lever_info = map.interaction_element[self.lever_state]
+        lever_info = map.interactions[self.lever_state]
         lever_x = lever_info["position"][0] * map.TILE_SIZE + lever_info["position"][2] + map.X_OFFSET
         lever_y = lever_info["position"][1] * map.TILE_SIZE + lever_info["position"][3] + map.Y_OFFSET
 
-        lock_info = map.interaction_element[self.lock_state]
+        lock_info = map.interactions[self.lock_state]
         lock_x = lock_info["position"][0] * map.TILE_SIZE + lock_info["position"][2] + map.X_OFFSET
         lock_y = lock_info["position"][1] * map.TILE_SIZE + lock_info["position"][3] + map.Y_OFFSET
 
@@ -55,6 +57,7 @@ class Game:
             self.toggle_lever()
         elif self.is_near_player(lock_x, lock_y):
             self.toggle_lock()
+
 
     def toggle_lever(self):
         self.lever_state = "lever_down" if self.lever_state == "lever_up" else "lever_up"
@@ -66,10 +69,11 @@ class Game:
         self.update_map_for_states()
 
         if self.lever_state == "lever_down":
-            self.show_special_room()
+            self.show_boss_room()
+
 
     def toggle_lock(self):
-        self.lock_state = "lock_key" if self.lock_state == "lock" else "lock"
+        self.lock_state = "key_lock" if self.lock_state == "keyless_lock" else "keyless_lock"
         self.door_state = "door_open" if self.door_state == "door_closed" else "door_closed"
 
         map.update_lock_state(self.canvas, self.lock_state)
@@ -77,14 +81,16 @@ class Game:
 
         self.update_map_for_states()
 
-    def show_special_room(self):
-        if not self.special_room_visible:
-            self.special_room_visible = True
-            map.toggle_special_room_visibility(self.canvas, visibility="normal")
+
+    def show_boss_room(self):
+        if not self.boss_room_visible:
+            self.boss_room_visible = True
+            map.toggle_boss_room_visibility(self.canvas, visibility="normal")
+
 
     def update_map_for_states(self):
-        gate_pos = map.interaction_element["gate_closed"]["position"]
-        door_pos = map.interaction_element["door_closed"]["position"]
+        gate_pos = map.interactions["gate_closed"]["position"]
+        door_pos = map.interactions["door_closed"]["position"]
 
         gate_x, gate_y = gate_pos[0], gate_pos[1]
         door_x, door_y = door_pos[0], door_pos[1]
@@ -92,11 +98,13 @@ class Game:
         map.MAP[gate_y][gate_x] = 0 if self.gate_state == "gate_closed" else 1
         map.MAP[door_y][door_x] = 0 if self.door_state == "door_closed" else 1
 
+
     def is_valid_move(self, x, y):
         if 0 <= x < len(map.MAP[0]) and 0 <= y < len(map.MAP):
             if map.MAP[y][x] == 1:
                 return True
         return False
+
 
     def is_near_player(self, element_x, element_y, max_distance=64):
         player_px = self.player.x

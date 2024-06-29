@@ -1,6 +1,6 @@
 import tkinter as tk
-import PIL
 from PIL import Image, ImageTk
+
 
 TILE_SIZE = 32
 X_OFFSET = 0  
@@ -33,7 +33,7 @@ MAP = [
 ]
 
 
-individual_images = {
+tileset = {
     "wall_1": {"file": "assets/tileset/wall_1.png", "position": (5, 10, 0, 20)},
     "floor_1": {"file": "assets/tileset/floor_1.png", "position": (5, 12, 0, 10)},
     "gold_9": {"file": "assets/tileset/gold_9.png", "position": (5, 15, 0, -10)},
@@ -67,9 +67,10 @@ individual_images = {
     "crate_1": {"file": "assets/tileset/crate_1.png", "position": (18, 17, -10, 10)},
 }
 
-interaction_element = {
-    "lock_key": {"file": "assets/tileset/lock_key.png", "position": (8, 16, 5, 5), "type": "lock_key"},
-    "lock": {"file": "assets/tileset/lock.png", "position": (8, 16, 5, 5), "type": "lock_key"},
+
+interactions = {
+    "key_lock": {"file": "assets/tileset/key_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
+    "keyless_lock": {"file": "assets/tileset/keyless_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
     "door_closed": {"file": "assets/tileset/door_closed.png", "position": (7, 16, 0, -5), "type": "door"},
     "door_open": {"file": "assets/tileset/door_open.png", "position": (7, 16, 0, -5), "type": "door"},
     
@@ -81,7 +82,7 @@ interaction_element = {
 
 
 def create_map(canvas):
-    for item, info in individual_images.items():
+    for item, info in tileset.items():
         img = Image.open(info["file"])
         img = ImageTk.PhotoImage(img)
         canvas.create_image(
@@ -93,11 +94,12 @@ def create_map(canvas):
             canvas.images = []
         canvas.images.append(img)
 
-def create_interactive_elements(canvas, lever_state, gate_state, lock_state, door_state):
-    lever_info = interaction_element[lever_state]
-    gate_info = interaction_element[gate_state]
-    lock_info = interaction_element[lock_state]
-    door_info = interaction_element[door_state]
+
+def create_interactions(canvas, lever_state, gate_state, lock_state, door_state):
+    lever_info = interactions[lever_state]
+    gate_info = interactions[gate_state]
+    lock_info = interactions[lock_state]
+    door_info = interactions[door_state]
 
     lever_img = Image.open(lever_info["file"])
     lever_img = ImageTk.PhotoImage(lever_img)
@@ -140,11 +142,11 @@ def create_interactive_elements(canvas, lever_state, gate_state, lock_state, doo
     canvas.images.extend([lever_img, gate_img, lock_img, door_img])
 
 
-def create_special_room(canvas, visibility="hidden"):
-    special_room_x_offset = 0
-    special_room_y_offset = 0
+def create_boss_room(canvas, visibility="hidden"):
+    boss_room_x_offset = 0
+    boss_room_y_offset = 0
 
-    special_room_elements = {
+    boss_room_tileset = {
         "floor_7": {"file": "assets/tileset/floor_7.png", "position": (11, 6, 10, 0)},
         "wall_7": {"file": "assets/tileset/wall_7.png", "position": (11, 4, 10, 10)},
         "pillar_1": {"file": "assets/tileset/pillar_1.png", "position": (13, 5, -10, -10)},
@@ -152,29 +154,30 @@ def create_special_room(canvas, visibility="hidden"):
         "coffin": {"file": "assets/tileset/coffin.png", "position": (15, 5, 0, 0)},
     }
 
-    special_room_items = []
-    for item, info in special_room_elements.items():
+    boss_room_items = []
+    for item, info in boss_room_tileset.items():
         img = Image.open(info["file"])
         img = ImageTk.PhotoImage(img)
         item_id = canvas.create_image(
-            info["position"][0] * TILE_SIZE + info["position"][2] + special_room_x_offset,
-            info["position"][1] * TILE_SIZE + info["position"][3] + special_room_y_offset,
+            info["position"][0] * TILE_SIZE + info["position"][2] + boss_room_x_offset,
+            info["position"][1] * TILE_SIZE + info["position"][3] + boss_room_y_offset,
             image=img, anchor="nw", state=visibility
         )
-        special_room_items.append((item_id, img))
+        boss_room_items.append((item_id, img))
 
-    if not hasattr(canvas, 'special_room_items'):
-        canvas.special_room_items = special_room_items
+    if not hasattr(canvas, 'boss_room_items'):
+        canvas.boss_room_items = boss_room_items
     else:
-        canvas.special_room_items.extend(special_room_items)
+        canvas.boss_room_items.extend(boss_room_items)
 
-def toggle_special_room_visibility(canvas, visibility="hidden"):
-    for item_id, _ in canvas.special_room_items:
+
+def toggle_boss_room_visibility(canvas, visibility="hidden"):
+    for item_id, _ in canvas.boss_room_items:
         canvas.itemconfigure(item_id, state=visibility)
 
 
 def update_lever_state(canvas, lever_state):
-    lever_info = interaction_element[lever_state]
+    lever_info = interactions[lever_state]
     lever_img = Image.open(lever_info["file"])
     lever_img = ImageTk.PhotoImage(lever_img)
 
@@ -186,7 +189,7 @@ def update_lever_state(canvas, lever_state):
 
 
 def update_gate_state(canvas, gate_state):
-    gate_info = interaction_element[gate_state]
+    gate_info = interactions[gate_state]
     gate_img = Image.open(gate_info["file"])
     gate_img = ImageTk.PhotoImage(gate_img)
 
@@ -198,7 +201,7 @@ def update_gate_state(canvas, gate_state):
 
 
 def update_lock_state(canvas, lock_state):
-    lock_info = interaction_element[lock_state]
+    lock_info = interactions[lock_state]
     lock_img = Image.open(lock_info["file"])
     lock_img = ImageTk.PhotoImage(lock_img)
 
@@ -210,7 +213,7 @@ def update_lock_state(canvas, lock_state):
 
 
 def update_door_state(canvas, door_state):
-    door_info = interaction_element[door_state]
+    door_info = interactions[door_state]
     door_img = Image.open(door_info["file"])
     door_img = ImageTk.PhotoImage(door_img)
 

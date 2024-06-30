@@ -82,7 +82,7 @@ class Player:
             dx = self.target_x - self.x
             dy = self.target_y - self.y
             distance = math.sqrt(dx**2 + dy**2)
-            speed = 3  # Velocidade do movimento
+            speed = 3  
 
             if distance < speed:
                 self.x = self.target_x
@@ -126,3 +126,31 @@ class Player:
             self.current_animation = self.animations[f'attack_{self.direction}']
             self.current_frame = 0
             print(f"Iniciando ataque na direção {self.direction} com {len(self.current_animation)} frames")
+
+class MimicChest:
+    def __init__(self, canvas, x, y):
+        self.canvas = canvas
+        self.x = x
+        self.y = y
+        self.current_frame = 0
+        self.mimic_hp = 5
+        self.mimic_alive = True
+        self.mimic_moving = False
+        self.animations = {
+            "down": load_gif("assets/mob_mimic_chest/run/down.gif"),
+            "up": load_gif("assets/mob_mimic_chest/run/up.gif"),
+            "left": load_gif("assets/mob_mimic_chest/run/left.gif"),
+            "right": load_gif("assets/mob_mimic_chest/run/right.gif"),
+            "damage_down": load_gif("assets/mob_mimic_chest/damage/damage_down.gif"),
+            "damage_up": load_gif("assets/mob_mimic_chest/damage/damage_up.gif"),
+            "damage_left": load_gif("assets/mob_mimic_chest/damage/damage_left.gif"),
+            "damage_right": load_gif("assets/mob_mimic_chest/damage/damage_right.gif"),
+        }
+        self.current_animation = self.animations["down"]  # Inicialize current_animation
+        self.image = canvas.create_image(x, y, image=self.animations["down"][0])
+
+def load_gif(path):
+    image = Image.open(path)
+    frames = [ImageTk.PhotoImage(frame.copy()) for frame in ImageSequence.Iterator(image)]
+    return frames
+

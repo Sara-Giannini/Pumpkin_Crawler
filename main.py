@@ -1,9 +1,7 @@
 import tkinter as tk
-from PIL import Image, ImageSequence, ImageTk
 import map
-from player import Player
+from player import MimicChest, Player, load_gif
 import random
-
 
 class Game:
     def __init__(self, root):
@@ -13,7 +11,6 @@ class Game:
 
         self.player_x = 25
         self.player_y = 8
-
         self.lever_state = "lever_up"
         self.gate_state = "gate_closed"
         self.lock_state = "keyless_lock"
@@ -28,27 +25,7 @@ class Game:
 
         self.mimic_x = 6
         self.mimic_y = 17
-        self.mimic_hp = 10
-        self.mimic_moving = False
-        self.mimic_alive = True
-        self.player_has_key = False
-        self.key = None
-
-        self.mimic_images = {
-            "down": load_gif("assets/mob_mimic_chest/run/down.gif"),
-            "up": load_gif("assets/mob_mimic_chest/run/up.gif"),
-            "left": load_gif("assets/mob_mimic_chest/run/left.gif"),
-            "right": load_gif("assets/mob_mimic_chest/run/right.gif"),
-            "damage_down": ImageTk.PhotoImage(file="assets/mob_mimic_chest/damage/damage_down.gif"),
-            "damage_up": ImageTk.PhotoImage(file="assets/mob_mimic_chest/damage/damage_up.gif"),
-            "damage_left": ImageTk.PhotoImage(file="assets/mob_mimic_chest/damage/damage_left.gif"),
-            "damage_right": ImageTk.PhotoImage(file="assets/mob_mimic_chest/damage/damage_right.gif")
-        }
-        self.key_image = load_gif("assets/keys/key_1.gif")
-        self.mimic = self.canvas.create_image(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET, image=self.mimic_images["down"][0])
-
-        self.mimic_frame = 0
-        self.mimic_current_animation = self.mimic_images["down"]
+        self.mimic = MimicChest(self.canvas, self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET)
 
         self.root.bind("<KeyPress>", self.handle_keypress)
         self.canvas.bind("<Button-1>", self.on_click)
@@ -74,17 +51,18 @@ class Game:
     def on_right_click(self, event):
         self.player.attack()
         if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
-            self.mimic_hp -= 1
+            self.mimic.mimic_hp -= 1
             direction = self.get_direction(self.mimic_x, self.mimic_y, self.player_x, self.player_y)
-            self.canvas.itemconfig(self.mimic, image=self.mimic_images[f"damage_{direction}"])
-            if self.mimic_hp <= 0 and self.mimic_alive:
-                self.mimic_alive = False
-                self.canvas.delete(self.mimic)
+            self.canvas.itemconfig(self.mimic.image, image=self.mimic.animations[f"damage_{direction}"][0])
+            if self.mimic.mimic_hp <= 0 and self.mimic.mimic_alive:
+                self.mimic.mimic_alive = False
+                self.canvas.delete(self.mimic.image)
+                self.key_image = load_gif("assets/keys/key_1.gif")
                 self.key = self.canvas.create_image(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET, image=self.key_image[0])
                 self.animate_key()
                 self.canvas.tag_raise(self.key)
             else:
-                self.mimic_moving = True
+                self.mimic.mimic_moving = True
                 self.start_mimic_animation()
 
     def handle_interaction(self):
@@ -102,7 +80,7 @@ class Game:
             if self.player_has_key:
                 self.toggle_lock()
         elif self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
-            self.mimic_moving = True
+            self.mimic.mimic_moving = True
             self.start_mimic_animation()
 
         if self.key and self.is_near_player(self.canvas.coords(self.key)[0], self.canvas.coords(self.key)[1]):
@@ -170,23 +148,23 @@ class Game:
         self.update_mimic_animation()
 
     def update_mimic_animation(self):
-        if self.mimic_alive and self.mimic_moving:
-            if self.mimic_frame >= len(self.mimic_current_animation):
-                self.mimic_frame = 0
+        if self.mimic.mimic_alive and self.mimic.mimic_moving:
+            if self.mimic.current_frame >= len(self.mimic.current_animation):
+                self.mimic.current_frame = 0
 
             direction = random.choice(["up", "down", "left", "right"])
-            new_x, new_y = self.move_item(self.mimic, direction, self.mimic_x, self.mimic_y)
+            new_x, new_y = self.move_item(self.mimic.image, direction, self.mimic_x, self.mimic_y)
 
             if not self.is_valid_move(new_x, new_y):
                 direction = self.reverse_direction(direction)
-                new_x, new_y = self.move_item(self.mimic, direction, self.mimic_x, self.mimic_y)
+                new_x, new_y = self.move_item(self.mimic.image, direction, self.mimic_x, self.mimic_y)
 
             if self.is_valid_move(new_x, new_y):
                 self.mimic_x, self.mimic_y = new_x, new_y
-                self.mimic_current_animation = self.mimic_images[direction]
+                self.mimic.current_animation = self.mimic.animations[direction]
 
-                self.smooth_move(self.mimic, self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET, direction)
-                self.mimic_frame += 1
+                self.smooth_move(self.mimic.image, self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET, direction)
+                self.mimic.current_frame += 1
 
             self.after_id_mimic = self.root.after(500, self.update_mimic_animation)
 
@@ -197,7 +175,11 @@ class Game:
 
         for i in range(10):
             self.root.after(i * 50, lambda i=i: self.canvas.move(item, step_x, step_y))
-        self.root.after(500, lambda: self.canvas.itemconfig(item, image=self.mimic_current_animation[self.mimic_frame]))
+        self.root.after(500, lambda: self.canvas.itemconfig(item, image=self.mimic.animations[direction][0]))
+
+    def reverse_direction(self, direction):
+        directions = {"up": "down", "down": "up", "left": "right", "right": "left"}
+        return directions[direction]
 
     def move_item(self, item, direction, x, y):
         if direction == "up":
@@ -208,26 +190,16 @@ class Game:
             return x - 1, y
         elif direction == "right":
             return x + 1, y
-        return x, y
-
-    def reverse_direction(self, direction):
-        return {
-            "up": "down",
-            "down": "up",
-            "left": "right",
-            "right": "left"
-        }[direction]
 
     def animate_key(self):
-        if self.key:
-            self.canvas.itemconfig(self.key, image=self.key_image[self.mimic_frame % len(self.key_image)])
-            self.mimic_frame += 1
-            self.key_anim_id = self.root.after(500, self.animate_key)
+        def update_key_animation(frame_index):
+            self.canvas.itemconfig(self.key, image=self.key_image[frame_index])
+            next_frame_index = (frame_index + 1) % len(self.key_image)
+            self.key_anim_id = self.root.after(100, update_key_animation, next_frame_index)
 
+        if self.key_image:
+            update_key_animation(0)
 
-def load_gif(path):
-    pil_image = Image.open(path)
-    return [ImageTk.PhotoImage(frame.copy()) for frame in ImageSequence.Iterator(pil_image)]
 
 
 def start_game():

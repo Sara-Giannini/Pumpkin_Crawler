@@ -118,15 +118,14 @@ class Boss:
         self.boss_alive = True
         self.boss_hp = 100
         self.direction = "down"
-        self.animation_speed = 150  # Intervalo de atualização da animação em ms (ajustado para ser mais lento)
+        self.animation_speed = 150
         self.animation_index = 0
-        self.movement_speed = self.animation_speed  # Utilize o mesmo intervalo para movimentos e animações
-        self.step_size = 2  # Tamanho do passo em pixels
-        self.attack_cooldown = 1000  # Intervalo de tempo entre ataques em ms
+        self.movement_speed = self.animation_speed
+        self.step_size = 2
+        self.attack_cooldown = 2000
         self.can_attack = True
-        self.after_id = None
         self.animation_id = None
-        self.movement_id = None  # Adicionei este atributo para controlar a movimentação
+        self.movement_id = None
 
     def load_gif(self, gif_path):
         return [tk.PhotoImage(file=gif_path, format=f'gif -index {i}') for i in range(4)]
@@ -138,44 +137,50 @@ class Boss:
     def start_movement(self):
         if self.is_visible and not self.is_moving:
             self.is_moving = True
-            self.animate()  # Iniciar animação contínua
-            self.move_towards_player()
+            if self.animation_id is None:
+                self.animate()
+            if self.movement_id is None:
+                self.move_towards_player()
 
     def move_towards_player(self):
         if not self.is_visible or not self.is_moving:
             return
-
         player_coords = self.canvas.coords(self.player.image)
         if self.is_near_player(player_coords) and self.can_attack:
             self.attack()
         else:
-            direction = self.get_direction(player_coords)
-            self.update_position(direction)
+            direction_vector = self.get_direction_vector(player_coords)
+            self.update_position(direction_vector)
             self.movement_id = self.canvas.after(self.movement_speed, self.move_towards_player)
 
-    def update_position(self, direction):
-        target_x, target_y = self.x, self.y
-        if direction == "left":
-            target_x -= self.step_size
-        elif direction == "right":
-            target_x += self.step_size
-        elif direction == "up":
-            target_y -= self.step_size
-        elif direction == "down":
-            target_y += self.step_size
-
+    def update_position(self, direction_vector):
+        target_x = self.x + direction_vector[0] * self.step_size
+        target_y = self.y + direction_vector[1] * self.step_size
         self.x, self.y = target_x, target_y
         self.canvas.coords(self.image, self.x, self.y)
-        self.direction = direction
+        self.direction = self.get_closest_direction(direction_vector)
 
-    def get_direction(self, player_coords):
+    def get_direction_vector(self, player_coords):
         player_x, player_y = player_coords
-        if abs(self.x - player_x) > abs(self.y - player_y):
-            return "left" if self.x > player_x else "right"
-        else:
-            return "up" if self.y > player_y else "down"
+        direction_vector = np.array([player_x - self.x, player_y - self.y])
+        norm = np.linalg.norm(direction_vector)
+        if norm == 0:
+            return np.array([0, 0])
+        return direction_vector / norm
+
+    def get_closest_direction(self, direction_vector):
+        directions = {
+            "left": np.array([-1, 0]),
+            "right": np.array([1, 0]),
+            "up": np.array([0, -1]),
+            "down": np.array([0, 1]),
+        }
+        closest_direction = min(directions.keys(), key=lambda k: np.linalg.norm(direction_vector - directions[k]))
+        return closest_direction
 
     def animate(self):
+        if self.animation_id is not None:
+            self.canvas.after_cancel(self.animation_id)
         frames = self.boss_images["move"][self.direction]
         self.canvas.itemconfig(self.image, image=frames[self.animation_index])
         self.animation_index = (self.animation_index + 1) % len(frames)
@@ -184,20 +189,16 @@ class Boss:
     def attack(self):
         if not self.is_visible or not self.can_attack:
             return
-
-        self.can_attack = False  # Desabilita a capacidade de atacar até que o cooldown termine
-
-        # Parar a animação e movimento atual
+        self.can_attack = False
         if self.movement_id:
             self.canvas.after_cancel(self.movement_id)
+            self.movement_id = None
         if self.animation_id:
             self.canvas.after_cancel(self.animation_id)
-
+            self.animation_id = None
         frames = self.boss_images["attack"][self.direction]
         self.canvas.itemconfig(self.image, image=frames[0])
         self.canvas.after(self.animation_speed, self.update_attack_animation, frames, 1)
-
-        # Simula o dano no jogador
         self.player.receive_damage(10)
 
     def update_attack_animation(self, frames, frame_index):
@@ -205,10 +206,8 @@ class Boss:
             self.canvas.itemconfig(self.image, image=frames[frame_index])
             self.canvas.after(self.animation_speed, self.update_attack_animation, frames, frame_index + 1)
         else:
-            # Após o ataque, retomar a animação de movimento e continuar o movimento
             self.animate()
             self.move_towards_player()
-            # Inicia o cooldown de ataque
             self.canvas.after(self.attack_cooldown, self.reset_attack)
 
     def reset_attack(self):
@@ -220,31 +219,33 @@ class Boss:
             if self.boss_hp <= 0:
                 self.die()
             else:
+                if self.animation_id is not None:
+                    self.canvas.after_cancel(self.animation_id)
                 frames = self.boss_images["damage"][direction]
                 self.update_damage_animation(frames, 0)
 
     def update_damage_animation(self, frames, frame_index):
         if frame_index < len(frames):
             self.canvas.itemconfig(self.image, image=frames[frame_index])
-            self.canvas.after(self.animation_speed, self.update_damage_animation, frames, frame_index + 1)
+            self.animation_id = self.canvas.after(self.animation_speed, self.update_damage_animation, frames, frame_index + 1)
         else:
-            # Após sofrer dano, retomar a animação de movimento e continuar o movimento
             self.animate()
             self.move_towards_player()
 
     def die(self):
         self.boss_alive = False
+        if self.animation_id is not None:
+            self.canvas.after_cancel(self.animation_id)
         frames = self.boss_images["death"]
         self.update_death_animation(frames, 0)
 
     def update_death_animation(self, frames, frame_index):
         if frame_index < len(frames):
             self.canvas.itemconfig(self.image, image=frames[frame_index])
-            self.canvas.after(self.animation_speed, self.update_death_animation, frames, frame_index + 1)
+            self.animation_id = self.canvas.after(self.animation_speed, self.update_death_animation, frames, frame_index + 1)
         else:
             self.canvas.delete(self.image)
 
     def is_near_player(self, player_coords):
         player_x, player_y = player_coords
         return abs(self.x - player_x) < 20 and abs(self.y - player_y) < 20
-

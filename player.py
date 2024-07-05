@@ -131,9 +131,18 @@ class Player:
             print(f"Atacando na direção {self.direction} com {len(self.current_animation)} frames")
 
             # Verifica se o jogador atingiu o Boss
-            boss_coords = self.canvas.coords(self.image)  # Acessa diretamente a imagem do player
+            boss_coords = self.canvas.coords(self.boss.image)  # Corrigido para pegar coordenadas do boss
             if self.is_near_boss(boss_coords):
                 self.attack_boss()
+
+    def is_near_boss(self, boss_coords):
+        boss_x, boss_y = boss_coords
+        return abs(self.x - boss_x) < 20 and abs(self.y - boss_y) < 20
+
+    def attack_boss(self):
+        # Simula o ataque no Boss
+        self.boss.take_damage(self.direction)
+
 
     def receive_damage(self, damage):
         self.hp -= damage
@@ -143,12 +152,4 @@ class Player:
 
     def die(self):
         print("Você morreu.")
-
-    def is_near_boss(self, boss_coords):
-        boss_x, boss_y = boss_coords
-        return abs(self.x - boss_x) < 20 and abs(self.y - boss_y) < 20
-
-    def attack_boss(self):
-        # Simula o ataque no Boss
-        self.boss.take_damage(self.direction)
 

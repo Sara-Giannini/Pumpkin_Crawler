@@ -1,6 +1,7 @@
+
 import tkinter as tk
 from PIL import Image, ImageSequence, ImageTk
-import math
+import numpy as np
 import map
 
 ANIMATIONS = {
@@ -27,13 +28,13 @@ def load_gif(gif_path):
                 img_tk = ImageTk.PhotoImage(img_pil)
                 imgs.append(img_tk)
         if not imgs:
-            raise ValueError(f"Erro: Nenhum frame carregado para {gif_path}")
+            raise ValueError(f"Erro: nenhum frame carregado para {gif_path}")
     except Exception as e:
         print(f"Erro ao carregar GIF {gif_path}: {e}")
     return imgs
 
 class Player:
-    def __init__(self, canvas, start_x, start_y):
+    def __init__(self, canvas, start_x, start_y, boss):
         self.canvas = canvas
         self.x = start_x
         self.y = start_y
@@ -42,11 +43,13 @@ class Player:
         self.direction = 'down'
         self.is_moving = False
         self.is_attacking = False
+        self.hp = 100  # Adiciona pontos de vida para o jogador
+        self.boss = boss  # Referência ao boss
 
         self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items()}
         for key, anim in self.animations.items():
             if not anim:
-                print(f"Erro: Animação {key} não carregada corretamente")
+                print(f"Erro: animação {key} não carregada")
         self.current_animation = self.animations['idle_down']
         self.current_frame = 0
 
@@ -81,8 +84,8 @@ class Player:
         if self.is_moving:
             dx = self.target_x - self.x
             dy = self.target_y - self.y
-            distance = math.sqrt(dx**2 + dy**2)
-            speed = 3  
+            distance = np.sqrt(dx**2 + dy**2)
+            speed = 3
 
             if distance < speed:
                 self.x = self.target_x
@@ -90,9 +93,9 @@ class Player:
                 self.is_moving = False
                 self.current_animation = self.animations[f'idle_{self.direction}']
             else:
-                angle = math.atan2(dy, dx)
-                new_x = self.x + speed * math.cos(angle)
-                new_y = self.y + speed * math.sin(angle)
+                angle = np.arctan2(dy, dx)
+                new_x = self.x + speed * np.cos(angle)
+                new_y = self.y + speed * np.sin(angle)
 
                 if self.is_valid_move(new_x, new_y):
                     self.x = new_x
@@ -125,32 +128,27 @@ class Player:
             self.is_attacking = True
             self.current_animation = self.animations[f'attack_{self.direction}']
             self.current_frame = 0
-            print(f"Iniciando ataque na direção {self.direction} com {len(self.current_animation)} frames")
+            print(f"Atacando na direção {self.direction} com {len(self.current_animation)} frames")
 
-class MimicChest:
-    def __init__(self, canvas, x, y):
-        self.canvas = canvas
-        self.x = x
-        self.y = y
-        self.current_frame = 0
-        self.mimic_hp = 5
-        self.mimic_alive = True
-        self.mimic_moving = False
-        self.animations = {
-            "down": load_gif("assets/mob_mimic_chest/run/down.gif"),
-            "up": load_gif("assets/mob_mimic_chest/run/up.gif"),
-            "left": load_gif("assets/mob_mimic_chest/run/left.gif"),
-            "right": load_gif("assets/mob_mimic_chest/run/right.gif"),
-            "damage_down": load_gif("assets/mob_mimic_chest/damage/damage_down.gif"),
-            "damage_up": load_gif("assets/mob_mimic_chest/damage/damage_up.gif"),
-            "damage_left": load_gif("assets/mob_mimic_chest/damage/damage_left.gif"),
-            "damage_right": load_gif("assets/mob_mimic_chest/damage/damage_right.gif"),
-        }
-        self.current_animation = self.animations["down"]  # Inicialize current_animation
-        self.image = canvas.create_image(x, y, image=self.animations["down"][0])
+            # Verifica se o jogador atingiu o Boss
+            boss_coords = self.canvas.coords(self.image)  # Acessa diretamente a imagem do player
+            if self.is_near_boss(boss_coords):
+                self.attack_boss()
 
-def load_gif(path):
-    image = Image.open(path)
-    frames = [ImageTk.PhotoImage(frame.copy()) for frame in ImageSequence.Iterator(image)]
-    return frames
+    def receive_damage(self, damage):
+        self.hp -= damage
+        print(f"Você recebeu {damage} de dano. HP restante: {self.hp}")
+        if self.hp <= 0:
+            self.die()
+
+    def die(self):
+        print("Você morreu.")
+
+    def is_near_boss(self, boss_coords):
+        boss_x, boss_y = boss_coords
+        return abs(self.x - boss_x) < 20 and abs(self.y - boss_y) < 20
+
+    def attack_boss(self):
+        # Simula o ataque no Boss
+        self.boss.take_damage(self.direction)
 

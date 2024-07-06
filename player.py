@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from PIL import Image, ImageSequence, ImageTk
 import numpy as np
@@ -17,6 +16,7 @@ ANIMATIONS = {
     'attack_left': 'assets/player/attack/attack_left.gif',
     'attack_right': 'assets/player/attack/attack_right.gif',
     'attack_up': 'assets/player/attack/attack_up.gif',
+    'death': 'assets/player/death/death.png',
 }
 
 def load_gif(gif_path):
@@ -43,10 +43,13 @@ class Player:
         self.direction = 'down'
         self.is_moving = False
         self.is_attacking = False
-        self.hp = 100  # Adiciona pontos de vida para o jogador
+        self.hp = 200  # Adiciona pontos de vida para o player
         self.boss = boss  # Referência ao boss
+        self.is_dead = False  # Verifica se o player está morto
 
-        self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items()}
+        self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items() if path.endswith('.gif')}
+        self.death_image = ImageTk.PhotoImage(file=ANIMATIONS['death'])
+
         for key, anim in self.animations.items():
             if not anim:
                 print(f"Erro: animação {key} não carregada")
@@ -62,6 +65,9 @@ class Player:
         self.animate()
 
     def animate(self):
+        if self.is_dead:
+            return  # Não faz nada se o player estiver morto
+
         self.current_frame += 1
         if self.current_frame >= len(self.current_animation):
             self.current_frame = 0
@@ -72,7 +78,13 @@ class Player:
         self.canvas.itemconfig(self.image, image=self.current_animation[self.current_frame])
         self.canvas.after(150, self.animate)
 
+    def is_alive(self):
+        return self.hp > 0
+
     def move_towards(self, target_x, target_y):
+        if self.is_dead:
+            return  # Não faz nada se o player estiver morto
+
         self.target_x = target_x
         self.target_y = target_y
 
@@ -81,7 +93,7 @@ class Player:
             self.move_to()
 
     def move_to(self):
-        if self.is_moving:
+        if self.is_moving and not self.is_dead:
             dx = self.target_x - self.x
             dy = self.target_y - self.y
             distance = np.sqrt(dx**2 + dy**2)
@@ -123,15 +135,28 @@ class Player:
             return map.MAP[tile_y][tile_x] == 1
         return False
 
-    def attack(self):
+    def attack(self, mouse_x=None, mouse_y=None):
+        if self.is_dead:
+            return  # Não faz nada se o player estiver morto
+
+        # Implementação do ataque do player usando mouse_x e mouse_y
+        if mouse_x is not None and mouse_y is not None:
+            print(f"Ataque na direção: x={mouse_x}, y={mouse_y}")
+
         if not self.is_attacking:
             self.is_attacking = True
+            self.is_moving = False  # Cancelar movimentação
+            self.target_x = self.x  # Parar o movimento atual
+            self.target_y = self.y
             self.current_animation = self.animations[f'attack_{self.direction}']
             self.current_frame = 0
-            print(f"Atacando na direção {self.direction} com {len(self.current_animation)} frames")
+            print(f'Atacando na direção {self.direction} com {len(self.current_animation)} frames')
 
-            # Verifica se o jogador atingiu o Boss
-            boss_coords = self.canvas.coords(self.boss.image)  # Corrigido para pegar coordenadas do boss
+        else:
+            print("Ataque padrão")
+
+            # Verifica se o Player atingiu o Boss
+            boss_coords = self.canvas.coords(self.boss.image)  # Acessa diretamente a imagem do Boss
             if self.is_near_boss(boss_coords):
                 self.attack_boss()
 
@@ -143,13 +168,18 @@ class Player:
         # Simula o ataque no Boss
         self.boss.take_damage(self.direction)
 
-
     def receive_damage(self, damage):
+        if self.is_dead:
+            return  # Não faz nada se o player estiver morto
+
         self.hp -= damage
         print(f"Você recebeu {damage} de dano. HP restante: {self.hp}")
         if self.hp <= 0:
             self.die()
 
     def die(self):
+        self.hp = 0
+        self.is_dead = True  # Define a verificação como True
+        self.canvas.itemconfig(self.image, image=self.death_image)
         print("Você morreu.")
 

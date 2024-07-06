@@ -122,7 +122,7 @@ class Boss:
         self.animation_index = 0
         self.movement_speed = self.animation_speed
         self.step_size = 2
-        self.attack_cooldown = 2000
+        self.attack_cooldown = 1000
         self.can_attack = True
         self.animation_id = None
         self.movement_id = None
@@ -215,7 +215,7 @@ class Boss:
 
     def take_damage(self, direction):
         if self.boss_alive:
-            self.boss_hp -= 10
+            self.boss_hp -= 20
             if self.boss_hp <= 0:
                 self.die()
             else:

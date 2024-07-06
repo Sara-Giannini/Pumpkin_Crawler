@@ -3,6 +3,7 @@ import tkinter as tk
 import map
 from player import Player, load_gif
 from enemies import Boss, MimicChest
+import numpy as np
 import random
 
 class Game:
@@ -100,8 +101,14 @@ class Game:
         Argumentos:
             event (tk.Event): O evento de clique do botão direito do mouse.
         """
-        self.player.attack()
+        mouse_x, mouse_y = event.x, event.y
+
         try:
+            # Determina a direção do ataque com base na posição do mouse
+            direction = self.get_direction_from_mouse(mouse_x, mouse_y)
+            self.player.direction = direction  # Atualiza a direção do player
+            self.player.attack(mouse_x, mouse_y)  # Realiza o ataque na direção do mouse
+
             if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
                 direction = self.get_direction(self.mimic_x, self.mimic_y, self.player.x, self.player.y)
                 self.mimic.take_damage(direction)
@@ -117,6 +124,25 @@ class Game:
                 self.boss.attack()
         except Exception as e:
             print(f"Erro ao processar clique direito: {e}")
+
+
+    def get_direction_from_mouse(self, mouse_x, mouse_y):
+        dx = mouse_x - self.player.x
+        dy = mouse_y - self.player.y
+        angle = np.arctan2(dy, dx)
+        directions = {
+            (-np.pi / 4, np.pi / 4): 'right',
+            (np.pi / 4, 3 * np.pi / 4): 'down',
+            (3 * np.pi / 4, -3 * np.pi / 4): 'left',
+            (-3 * np.pi / 4, -np.pi / 4): 'up'
+        }
+        for (low, high), direction in directions.items():
+            if low <= angle < high:
+                return direction
+        return 'down'
+
+    def is_near_player(self, x, y):
+        return abs(self.player.x - x) < 20 and abs(self.player.y - y) < 20
 
     def drop_key(self):
         """Dropa uma chave na posição onde o baú mímico morreu."""

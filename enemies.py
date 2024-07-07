@@ -19,7 +19,7 @@ class MimicChest:
         self.animations = self.load_animations()
         self.current_animation = self.animations["move_down"]
         self.image = self.canvas.create_image(self.x, self.y, image=self.current_animation[0])
-        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x  + self.hp / self.max_hp * 50, self.y - 5, fill = 'red')
+        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='orange')
         self.canvas.itemconfig(self.health_bar, state='hidden')
         self.update_animation()
 
@@ -41,11 +41,11 @@ class MimicChest:
             if direction == "up":
                 self.update_position(self.x, self.y - 10)
             elif direction == "down":
-                self.update_position(self.x, self.y - 10)
+                self.update_position(self.x, self.y + 10)
             elif direction == "left":
                 self.update_position(self.x - 10, self.y)
             elif direction == "right":
-                self.update_position(self.x - 10, self.y)
+                self.update_position(self.x + 10, self.y)
 
     def update_animation(self):
         if self.mimic_alive and self.mimic_moving:
@@ -62,13 +62,15 @@ class MimicChest:
 
         for i in range(10):
             self.canvas.after(i * 50, lambda i=i: self.canvas.move(self.image, step_x, step_y))
+            self.canvas.after(i * 50, self.update_health_bar)  # Atualiza a barra durante o movimento
 
         if direction in self.animations:
             self.canvas.after(500, lambda: self.canvas.itemconfig(self.image, image=self.animations[direction][0]))
 
     def reverse_direction(self, direction):
         directions = {"up": "down", "down": "up", "left": "right", "right": "left"}
-        return directions.get(direction, "down") 
+        return directions.get(direction, "down")
+
 
     def take_damage(self, direction):
         if self.mimic_alive:
@@ -79,15 +81,15 @@ class MimicChest:
             self.update_health_bar()
             if self.hp <= 0:
                 self.die()
-
             else:
-                if f"damage_{direction}" in self.animations: 
+                if f"damage_{direction}" in self.animations:
                     self.current_animation = self.animations[f"damage_{direction}"]
                     self.current_frame = 0
                     self.update_damage_animation()
 
     def update_health_bar(self):
-        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5)
+        health_ratio = max(self.hp / self.max_hp, 0)
+        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + health_ratio * 50, self.y - 5)
 
     def update_position(self, new_x, new_y):
         self.x = new_x
@@ -102,7 +104,6 @@ class MimicChest:
             self.canvas.after(100, self.update_damage_animation)
         else:
             self.current_frame = 0
-
             if "move_down" in self.animations:
                 self.current_animation = self.animations["move_down"]
                 self.update_animation()
@@ -113,6 +114,7 @@ class MimicChest:
         if 0 <= tile_x < len(map.MAP[0]) and 0 <= tile_y < len(map.MAP):
             return map.MAP[tile_y][tile_x] == 1
         return False
+
 
     def drop_key(self):
         """Dropa uma chave na posição onde o baú mímico morreu."""
@@ -165,8 +167,8 @@ class Boss:
         self.is_visible = False
         self.is_moving = False
         self.boss_alive = True
-        self.hp = 100
-        self.max_hp = 100
+        self.hp = 1000
+        self.max_hp = 1000
         self.direction = "down"
         self.animation_speed = 150
         self.animation_index = 0
@@ -179,7 +181,7 @@ class Boss:
         self.key = None
         self.key_image = None
         self.key_anim_id = None
-        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='red')
+        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 30, self.x + self.hp / self.max_hp * 50, self.y - 25, fill='red')
         self.canvas.itemconfig(self.health_bar, state='hidden')
 
     def load_animations(self):
@@ -211,6 +213,7 @@ class Boss:
     def reveal(self):
         self.is_visible = True
         self.canvas.itemconfig(self.image, state=tk.NORMAL)
+        self.canvas.itemconfig(self.health_bar, state='normal')
 
     def start_movement(self):
         if self.is_visible and not self.is_moving:
@@ -241,6 +244,7 @@ class Boss:
         self.x, self.y = target_x, target_y
         self.canvas.coords(self.image, self.x, self.y)
         self.direction = self.get_closest_direction(direction_vector)
+        self.update_health_bar()
 
     def get_direction_vector(self, player_coords):
         player_x, player_y = player_coords
@@ -283,7 +287,7 @@ class Boss:
         frames = self.boss_images["attack"][self.direction]
         self.canvas.itemconfig(self.image, image=frames[0])
         self.canvas.after(self.animation_speed, self.update_attack_animation, frames, 1)
-        self.player.receive_damage(10)
+        self.player.receive_damage(20)
 
     def update_attack_animation(self, frames, frame_index):
         if frame_index < len(frames):
@@ -314,7 +318,11 @@ class Boss:
                 self.update_damage_animation(frames, 0)
 
     def update_health_bar(self):
-        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5)
+        health_width = self.hp / self.max_hp * 100  
+        health_bar_x = self.x - health_width / 2  
+
+        # Atualiza a health_bar no canvas
+        self.canvas.coords(self.health_bar, health_bar_x, self.y - 25, health_bar_x + health_width, self.y - 30)
 
     def update_damage_animation(self, frames, frame_index):
         if frame_index < len(frames):

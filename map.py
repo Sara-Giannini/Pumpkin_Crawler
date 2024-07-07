@@ -78,6 +78,9 @@ interactions = {
     "gate_closed": {"file": "assets/interactive/gate_closed.png", "position": (17, 13, 0, -5), "type": "gate"},
     "gate_open": {"file": "assets/interactive/gate_open.png", "position": (17, 13, 0, -5), "type": "gate"},
 
+    "crate_1": {"file": "assets/interactive/crate_1.png", "position": (19, 17, 0, 10), "type": "crate"},
+    "crate_cracked": {"file": "assets/interactive/crate_1_cracked.png", "position": (19, 17, 0, 10), "type": "crate"},
+    "crate_broken": {"file": "assets/interactive/crate_1_broken.png", "position": (19, 17, 0, 10), "type": "crate"},
 }
 
 
@@ -136,12 +139,19 @@ def create_interactions(canvas, lever_state, gate_state, lock_state, door_state)
         door_info["position"][1] * TILE_SIZE + door_info["position"][3] + Y_OFFSET,
         image=door_img, anchor="nw", tags=("door",)
     )
-
-
+    
+    crate_info = interactions["crate_1"]
+    crate_img = Image.open(crate_info["file"])
+    crate_img = ImageTk.PhotoImage(crate_img)
+    crate_id = canvas.create_image(
+        crate_info["position"][0] * TILE_SIZE + crate_info["position"][2] + X_OFFSET,
+        crate_info["position"][1] * TILE_SIZE + crate_info["position"][3] + Y_OFFSET,
+        image=crate_img, anchor='nw', tags=("crate",)
+    )
 
     if not hasattr(canvas, 'images'):
         canvas.images = []
-    canvas.images.extend([lever_img, gate_img, lock_img, door_img])
+    canvas.images.extend([lever_img, gate_img, lock_img, door_img, crate_img])
 
 
 def create_boss_room(canvas, visibility="hidden"):
@@ -224,3 +234,12 @@ def update_door_state(canvas, door_state):
     if not hasattr(canvas, 'images'):
         canvas.images = []
     canvas.images.append(door_img)
+
+def update_crate_state(canvas, crate_state):
+    crate_info = interactions[crate_state]
+    crate_img = Image.open(crate_info['file'])
+    crate_img = ImageTk.PhotoImage(crate_img)
+    canvas.itemconfig("crate", image=crate_img)
+    if not hasattr(canvas, 'images'):
+        canvas.images = []
+    canvas.images.append(crate_img)

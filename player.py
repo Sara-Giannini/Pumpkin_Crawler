@@ -34,7 +34,7 @@ def load_gif(gif_path):
     return imgs
 
 class Player:
-    def __init__(self, canvas, start_x, start_y, boss):
+    def __init__(self, canvas, start_x, start_y, boss, game):
         self.canvas = canvas
         self.x = start_x
         self.y = start_y
@@ -46,6 +46,7 @@ class Player:
         self.hp = 200  # Pontos de vida do player
         self.max_hp = 200
         self.boss = boss  # Referência ao boss
+        self.game = game  # Referência ao objeto Game
         self.is_dead = False  # Verifica se o player está morto
 
         self.animations = {key: load_gif(path) for key, path in ANIMATIONS.items() if path.endswith('.gif')}
@@ -62,7 +63,7 @@ class Player:
             image=self.current_animation[self.current_frame],
             anchor='nw'
         )
-        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='green')
+        self.health_bar = self.canvas.create_rectangle(self.x - 10, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='lightgreen')
         self.animate()
 
     def animate(self):
@@ -81,7 +82,8 @@ class Player:
         self.canvas.after(150, self.animate)
 
     def update_health_bar(self):
-        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5)
+        health_ratio = max(self.hp / self.max_hp, 0)
+        self.canvas.coords(self.health_bar, self.x - 10, self.y - 10, self.x - 10 + health_ratio * 50, self.y - 5)
 
     def is_alive(self):
         return self.hp > 0
@@ -103,7 +105,6 @@ class Player:
             dy = self.target_y - self.y
             distance = np.sqrt(dx**2 + dy**2)
             speed = 3
-
             if distance < speed:
                 self.x = self.target_x
                 self.y = self.target_y
@@ -113,25 +114,23 @@ class Player:
                 angle = np.arctan2(dy, dx)
                 new_x = self.x + speed * np.cos(angle)
                 new_y = self.y + speed * np.sin(angle)
-
                 if self.is_valid_move(new_x, new_y):
                     self.x = new_x
                     self.y = new_y
-
-                if abs(dx) > abs(dy):
-                    if dx > 0:
-                        self.direction = 'right'
+                    if abs(dx) > abs(dy):
+                        if dx > 0:
+                            self.direction = 'right'
+                        else:
+                            self.direction = 'left'
                     else:
-                        self.direction = 'left'
-                else:
-                    if dy > 0:
-                        self.direction = 'down'
-                    else:
-                        self.direction = 'up'
-
-                self.current_animation = self.animations[f'run_{self.direction}']
-                self.canvas.coords(self.image, self.x, self.y)
-                self.canvas.after(50, self.move_to)
+                        if dy > 0:
+                            self.direction = 'down'
+                        else:
+                            self.direction = 'up'
+                    self.current_animation = self.animations[f'run_{self.direction}']
+                    self.canvas.coords(self.image, self.x, self.y)
+                    self.game.update_healing_potion_position()  # Atualiza a posição da poção 
+                    self.canvas.after(50, self.move_to)
 
     def is_valid_move(self, x, y):
         tile_x = int((x - map.X_OFFSET) / map.TILE_SIZE)
@@ -182,9 +181,11 @@ class Player:
         print(f"Você recebeu {damage} de dano. HP restante: {self.hp}")
         if self.hp <= 0:
             self.die()
+        self.update_health_bar
 
     def die(self):
         self.hp = 0
         self.is_dead = True  # Define a verificação como True
         self.canvas.itemconfig(self.image, image=self.death_image)
+        self.update_health_bar()
         print("Você morreu.")

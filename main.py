@@ -1,4 +1,6 @@
 import tkinter as tk
+import PIL
+from PIL import Image, ImageTk
 import map
 from player import Player, load_gif
 from enemies import Boss, MimicChest
@@ -34,6 +36,11 @@ class Game:
         self.final_chest_animated = False
         self.canvas.tag_raise(self.final_chest)
 
+        self.crate_hits = 0
+        self.healing_potion = None
+        self.healing_potion_bg = None
+        self.canvas.bind("Motion", self.update_healing_potion_position)
+
         self.root.keys_on_canvas = []  # Inicializa a lista para armazenar as chaves presentes no canvas
         self.keys_collected = []  # Armazena as chaves coletadas
 
@@ -53,7 +60,7 @@ class Game:
         self.boss = Boss(self.root, self.canvas, self.boss_x * map.TILE_SIZE + map.X_OFFSET, self.boss_y * map.TILE_SIZE + map.Y_OFFSET, None)  # Referência ao Player será definida depois
 
         # Criação dos inimigos e personagem principal
-        self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET, self.boss)
+        self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET, self.boss, self)        
 
         # Defini a referência do jogador no Boss
         self.boss.player = self.player
@@ -80,8 +87,11 @@ class Game:
         if event.keysym == 'e':
             self.collect_keys()
             self.handle_interaction()
+        elif event.keysym == '1':
+            self.use_healing_potion()
         else:
             self.player.handle_keypress(event)
+        self.update_healing_potion_position()
 
     def on_click(self, event):
         """
@@ -95,6 +105,7 @@ class Game:
             tile_y = (y - map.Y_OFFSET) // map.TILE_SIZE
             if self.player.is_valid_move(tile_x * map.TILE_SIZE + map.X_OFFSET, tile_y * map.TILE_SIZE + map.Y_OFFSET):
                 self.player.move_towards(tile_x * map.TILE_SIZE + map.X_OFFSET, tile_y * map.TILE_SIZE + map.Y_OFFSET)
+                self.update_healing_potion_position()
         except Exception as e:
             print(f"Erro ao processar clique esquerdo: {e}")
 
@@ -127,6 +138,14 @@ class Game:
             self.player.direction = direction
             self.player.attack(mouse_x, mouse_y)
 
+            crate_info = map.interactions["crate_1"]
+            crate_x = crate_info["position"][0] * map.TILE_SIZE + crate_info["position"][2] + map.X_OFFSET
+            crate_y = crate_info["position"][1] * map.TILE_SIZE + crate_info["position"][3] + map.Y_OFFSET
+            if self.is_near_player(crate_x, crate_y):
+                self.hit_crate()
+                self.handle_other_interactions()
+
+
             if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
                 direction = self.get_direction(self.mimic_x, self.mimic_y, self.player.x, self.player.y)
                 self.mimic.take_damage(direction)
@@ -154,13 +173,31 @@ class Game:
                     self.player_has_mimic_key = True
                     if key_type == "boss":
                         self.player_has_boss_key = True  # Rastrear chaves separadamente
+
         except Exception as e:
             print(f"Erro ao processar clique direito: {e}")
 
-    def schedule_enemy_moves(self):
-        if self.mimic.mimic_alive:
-            self.boss.move()
-        self.root.after(1000, self.schedule_enemy_moves)
+    def hit_crate(self):
+        self.crate_hits += 1
+        if self.crate_hits == 1:
+            map.update_crate_state(self.canvas, "crate_cracked")
+        elif self.crate_hits == 2:
+            map.update_crate_state(self.canvas, "crate_broken")
+            self.drop_healing_potion()
+
+
+    def drop_healing_potion(self):
+        crate_info = map.interactions["crate_broken"]
+        potion_img = tk.PhotoImage(file="assets/player/itens/healing_potion.png")
+        self.healing_potion = self.canvas.create_image(
+            crate_info["position"][0] * map.TILE_SIZE + crate_info["position"][2] + map.X_OFFSET,
+            crate_info["position"][1] * map.TILE_SIZE + crate_info["position"][3] + map.Y_OFFSET,
+            image=potion_img, anchor='nw'
+        )
+        if not hasattr(self.canvas, 'images'):
+            self.canvas.images = []
+        self.canvas.images.append(potion_img)
+
 
     def handle_interaction(self):
         """Trabalha com as interações do jogador com os objetos interativos do mapa."""
@@ -168,13 +205,13 @@ class Game:
             lever_info = map.interactions[self.lever_state]
             lever_x = lever_info["position"][0] * map.TILE_SIZE + lever_info["position"][2] + map.X_OFFSET
             lever_y = lever_info["position"][1] * map.TILE_SIZE + lever_info["position"][3] + map.Y_OFFSET
-
+            
             lock_info = map.interactions[self.lock_state]
             lock_x = lock_info["position"][0] * map.TILE_SIZE + lock_info["position"][2] + map.X_OFFSET
             lock_y = lock_info["position"][1] * map.TILE_SIZE + lock_info["position"][3] + map.Y_OFFSET
-
+            
             print(f"Verificando alavanca em ({lever_x}, {lever_y}) e fechadura em ({lock_x}, {lock_y})")
-
+            
             if self.is_near_player(lever_x, lever_y):
                 print("Interagindo com a alavanca")
                 self.toggle_lever()
@@ -186,7 +223,7 @@ class Game:
                 print("Interagindo com o Mimic")
                 self.mimic.mimic_moving = True
                 self.start_mimic_animation()
-
+            
             for key, key_x, key_y, key_type in self.keys_collected:
                 if self.is_near_player(key_x * map.TILE_SIZE + map.X_OFFSET, key_y * map.TILE_SIZE + map.Y_OFFSET):
                     print(f"Interagindo com a chave em ({key_x}, {key_y})")
@@ -195,13 +232,77 @@ class Game:
                     self.player_has_mimic_key = True
                     if key_type == "boss":
                         self.player_has_boss_key = True  # Rastrear chaves separadamente
-
+            
             if self.is_near_player(self.final_chest_x, self.final_chest_y):
                 if self.player_has_boss_key and not self.final_chest_animated:
                     print("Interagindo com o final_chest")
                     self.animate_final_chest()
+            
+            if self.healing_potion and self.is_near_player(self.canvas.coords(self.healing_potion)[0], self.canvas.coords(self.healing_potion)[1]):
+                self.collect_healing_potion()
+
         except Exception as e:
             print(f"Erro ao processar interação: {e}")
+
+    def handle_other_interactions(self):
+        """Trabalha com as outras interações além da crate."""
+        try:
+            if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
+                direction = self.get_direction(self.mimic_x, self.mimic_y, self.player.x, self.player.y)
+                self.mimic.take_damage(direction)
+                if self.mimic.mimic_alive:
+                    self.mimic.mimic_moving = True
+                    self.mimic.smooth_move(self.player.x, self.player.y, direction)
+                else:
+                    self.mimic.mimic_alive = False
+                    self.canvas.delete(self.mimic.image)
+                    self.mimic.drop_key()  # Usa o método drop_key do MimicChest para soltar a chave
+            
+            if self.is_near_player(self.boss.x, self.boss.y):
+                self.boss.attack()
+                if not self.boss.boss_alive:
+                    self.boss.drop_key()  # Usa o método drop_key do Boss para soltar a chave
+                    self.canvas.delete(self.boss.image)  # Remove Boss do canvas
+            
+            for key, key_x, key_y, key_type in self.keys_collected:
+                if self.is_near_player(key_x * map.TILE_SIZE + map.X_OFFSET, key_y * map.TILE_SIZE + map.Y_OFFSET):
+                    self.canvas.delete(key)
+                    self.keys_collected.remove((key, key_x, key_y, key_type))
+                    self.player_has_mimic_key = True
+                    if key_type == "boss":
+                        self.player_has_boss_key = True  # Rastrear chaves separadamente
+            
+        except Exception as e:
+            print(f"Erro ao processar outras interações: {e}")
+
+
+    def collect_healing_potion(self):
+        self.canvas.delete(self.healing_potion)
+        self.healing_potion = None
+
+        potion_bg_img = Image.open("assets/player/itens/healing_potion_bg.png")
+        potion_bg_img = potion_bg_img.resize((20, 20), Image.LANCZOS)
+        potion_bg_img = ImageTk.PhotoImage(potion_bg_img)
+        self.healing_potion_bg = self.canvas.create_image(
+            self.player.x, self.player.y - 20, image=potion_bg_img, anchor='nw'
+        )
+        self.healing_potion_collected = True
+        self.canvas.images.append(potion_bg_img)
+        self.update_healing_potion_position()
+
+    def use_healing_potion(self):
+        if self.healing_potion_bg:
+            self.canvas.delete(self.healing_potion_bg)
+            self.healing_potion_bg = None
+            self.player.hp = self.player.max_hp
+            self.player.update_health_bar()
+
+    def update_healing_potion_position(self):
+        if self.healing_potion_bg:
+            player_coords = self.canvas.coords(self.player.image)
+            new_x = player_coords[0] + 5
+            new_y = player_coords[1] - 40
+            self.canvas.coords(self.healing_potion_bg, new_x, new_y)
 
     def get_direction_from_mouse(self, mouse_x, mouse_y):
         dx = mouse_x - self.player.x
@@ -234,7 +335,7 @@ class Game:
                 self.boss.start_movement()
                 self.show_boss_room()
             else:
-                self.boss_movement_active = False  # Desativa o movimento do boss quando a alavanca é desativada
+                self.boss_movement_active = False  
 
         except Exception as e:
             print(f"Erro ao alternar alavanca: {e}")
@@ -351,6 +452,11 @@ class Game:
         except Exception as e:
             print(f"Erro ao atualizar animação do baú mímico: {e}")
 
+    def schedule_enemy_moves(self):
+        if self.mimic.mimic_alive:
+            self.boss.move()
+        self.root.after(1000, self.schedule_enemy_moves)
+
     def move_item(self, item, direction, x, y):
         """Move um item em uma direção especificada.
         Argumentos:
@@ -409,17 +515,6 @@ class Game:
 # Define window como variável global
 window = None
 
-def start_game():
-    """Inicia o jogo."""
-    global window
-    try:
-        window.destroy()
-        game_root = tk.Tk()
-        game = Game(game_root)
-        game_root.mainloop()
-    except Exception as e:
-        print(f"Erro ao iniciar o jogo: {e}")
-
 def start_menu():
     """Configuração da janela de Menu Principal."""
     global window
@@ -460,6 +555,17 @@ def start_menu():
 
     except Exception as e:
         print(f"Erro ao configurar a janela de Menu Principal: {e}")
+
+def start_game():
+    """Inicia o jogo."""
+    global window
+    try:
+        window.destroy()
+        game_root = tk.Tk()
+        game = Game(game_root)
+        game_root.mainloop()
+    except Exception as e:
+        print(f"Erro ao iniciar o jogo: {e}")
 
 def quit_game():
     """Sai do jogo."""

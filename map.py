@@ -64,20 +64,20 @@ tileset = {
     "iron": {"file": "assets/tileset/iron.png", "position": (28, 10, 6, 35)},
     "weapons": {"file": "assets/tileset/weapons.png", "position": (27, 6, 0, -10)},
     "shield": {"file": "assets/tileset/shield.png", "position": (27, 7, 0, -8)},
-    "crate_1": {"file": "assets/tileset/crate_1.png", "position": (19, 17, 0, 10)},
 }
 
 
 interactions = {
-    "key_lock": {"file": "assets/tileset/key_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
-    "keyless_lock": {"file": "assets/tileset/keyless_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
-    "door_closed": {"file": "assets/tileset/door_closed.png", "position": (7, 16, 0, -10), "type": "door"},
-    "door_open": {"file": "assets/tileset/door_open.png", "position": (7, 16, 0, -10), "type": "door"},
+    "key_lock": {"file": "assets/interactive/key_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
+    "keyless_lock": {"file": "assets/interactive/keyless_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
+    "door_closed": {"file": "assets/interactive/door_closed.png", "position": (7, 16, 0, -10), "type": "door"},
+    "door_open": {"file": "assets/interactive/door_open.png", "position": (7, 16, 0, -10), "type": "door"},
     
-    "lever_up": {"file": "assets/tileset/lever_up.png", "position": (18, 13, 10, 0), "type": "lever"},
-    "lever_down": {"file": "assets/tileset/lever_down.png", "position": (18, 13, 10, 0), "type": "lever"},
-    "gate_closed": {"file": "assets/tileset/gate_closed.png", "position": (17, 13, 0, -5), "type": "gate"},
-    "gate_open": {"file": "assets/tileset/gate_open.png", "position": (17, 13, 0, -5), "type": "gate"},
+    "lever_up": {"file": "assets/interactive/lever_up.png", "position": (18, 13, 10, 0), "type": "lever"},
+    "lever_down": {"file": "assets/interactive/lever_down.png", "position": (18, 13, 10, 0), "type": "lever"},
+    "gate_closed": {"file": "assets/interactive/gate_closed.png", "position": (17, 13, 0, -5), "type": "gate"},
+    "gate_open": {"file": "assets/interactive/gate_open.png", "position": (17, 13, 0, -5), "type": "gate"},
+
 }
 
 
@@ -136,6 +136,8 @@ def create_interactions(canvas, lever_state, gate_state, lock_state, door_state)
         door_info["position"][1] * TILE_SIZE + door_info["position"][3] + Y_OFFSET,
         image=door_img, anchor="nw", tags=("door",)
     )
+
+
 
     if not hasattr(canvas, 'images'):
         canvas.images = []

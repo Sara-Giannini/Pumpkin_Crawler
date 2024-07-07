@@ -44,6 +44,7 @@ class Player:
         self.is_moving = False
         self.is_attacking = False
         self.hp = 200  # Pontos de vida do player
+        self.max_hp = 200
         self.boss = boss  # Referência ao boss
         self.is_dead = False  # Verifica se o player está morto
 
@@ -61,9 +62,8 @@ class Player:
             image=self.current_animation[self.current_frame],
             anchor='nw'
         )
-
+        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='green')
         self.animate()
-
 
     def animate(self):
         if self.is_dead:
@@ -77,7 +77,11 @@ class Player:
                 self.current_animation = self.animations[f'idle_{self.direction}']
 
         self.canvas.itemconfig(self.image, image=self.current_animation[self.current_frame])
+        self.update_health_bar()
         self.canvas.after(150, self.animate)
+
+    def update_health_bar(self):
+        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5)
 
     def is_alive(self):
         return self.hp > 0

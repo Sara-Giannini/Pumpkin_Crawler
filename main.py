@@ -69,6 +69,7 @@ class Game:
         # Inicia animações e movimentos
         self.start_mimic_animation()
         self.boss.start_movement()
+        self.schedule_enemy_moves()
 
     def handle_keypress(self, event):
         """
@@ -155,6 +156,11 @@ class Game:
                         self.player_has_boss_key = True  # Rastrear chaves separadamente
         except Exception as e:
             print(f"Erro ao processar clique direito: {e}")
+
+    def schedule_enemy_moves(self):
+        if self.mimic.mimic_alive:
+            self.boss.move()
+        self.root.after(1000, self.schedule_enemy_moves)
 
     def handle_interaction(self):
         """Trabalha com as interações do jogador com os objetos interativos do mapa."""

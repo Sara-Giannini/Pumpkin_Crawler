@@ -12,12 +12,15 @@ class MimicChest:
         self.y = y
         self.keys_on_canvas = []
         self.current_frame = 0
-        self.mimic_hp = 5
+        self.hp = 150
+        self.max_hp = 150
         self.mimic_alive = True
         self.mimic_moving = False
         self.animations = self.load_animations()
         self.current_animation = self.animations["move_down"]
         self.image = self.canvas.create_image(self.x, self.y, image=self.current_animation[0])
+        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x  + self.hp / self.max_hp * 50, self.y - 5, fill = 'red')
+        self.canvas.itemconfig(self.health_bar, state='hidden')
         self.update_animation()
 
     def load_animations(self):
@@ -31,6 +34,18 @@ class MimicChest:
             "damage_right": load_gif("assets/mob_mimic_chest/damage/damage_right.gif"),
             "damage_up": load_gif("assets/mob_mimic_chest/damage/damage_up.gif"),
         }
+
+    def move(self):
+        if self.mimic_alive:
+            direction = np.random.choice(["up", "down", "left", "right"])
+            if direction == "up":
+                self.update_position(self.x, self.y - 10)
+            elif direction == "down":
+                self.update_position(self.x, self.y - 10)
+            elif direction == "left":
+                self.update_position(self.x - 10, self.y)
+            elif direction == "right":
+                self.update_position(self.x - 10, self.y)
 
     def update_animation(self):
         if self.mimic_alive and self.mimic_moving:
@@ -57,15 +72,28 @@ class MimicChest:
 
     def take_damage(self, direction):
         if self.mimic_alive:
-            self.mimic_hp -= 1
-            if self.mimic_hp <= 0:
-                self.mimic_alive = False
-                self.canvas.delete(self.image)
+            self.hp -= 10
+            print(f"Mimic Chest recebeu dano. HP restante: {self.hp}")
+            if self.hp < self.max_hp:
+                self.canvas.itemconfig(self.health_bar, state='normal')
+            self.update_health_bar()
+            if self.hp <= 0:
+                self.die()
+
             else:
                 if f"damage_{direction}" in self.animations: 
                     self.current_animation = self.animations[f"damage_{direction}"]
                     self.current_frame = 0
                     self.update_damage_animation()
+
+    def update_health_bar(self):
+        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5)
+
+    def update_position(self, new_x, new_y):
+        self.x = new_x
+        self.y = new_y
+        self.canvas.coords(self.image, self.x, self.y)
+        self.update_health_bar()
 
     def update_damage_animation(self):
         if self.mimic_alive and self.current_frame < len(self.current_animation):
@@ -115,6 +143,13 @@ class MimicChest:
         except Exception as e:
             print(f"Erro ao atualizar animação da chave: {e}")
 
+    def die(self):
+        self.mimic_alive = False
+        self.canvas.delete(self.image)
+        self.canvas.delete(self.health_bar)
+        print("Mimic Chest foi derrotado")
+        self.drop_key()
+
 
 
 class Boss:
@@ -130,7 +165,8 @@ class Boss:
         self.is_visible = False
         self.is_moving = False
         self.boss_alive = True
-        self.boss_hp = 100
+        self.hp = 100
+        self.max_hp = 100
         self.direction = "down"
         self.animation_speed = 150
         self.animation_index = 0
@@ -143,6 +179,8 @@ class Boss:
         self.key = None
         self.key_image = None
         self.key_anim_id = None
+        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='red')
+        self.canvas.itemconfig(self.health_bar, state='hidden')
 
     def load_animations(self):
         return {
@@ -262,15 +300,21 @@ class Boss:
 
     def take_damage(self, direction):
         if self.boss_alive:
-            self.boss_hp -= 20
-            if self.boss_hp <= 0:
-                self.boss_alive = False
+            self.hp -= 10
+            print(f"Boss recebeu dano. HP restante: {self.hp}")
+            if self.hp <= self.max_hp:
+                self.canvas.itemconfig(self.health_bar, state='normal')
+            self.update_health_bar()
+            if self.hp <= 0:
                 self.die()
             else:
                 if self.animation_id is not None:
                     self.canvas.after_cancel(self.animation_id)
                 frames = self.boss_images["damage"][direction]
                 self.update_damage_animation(frames, 0)
+
+    def update_health_bar(self):
+        self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5)
 
     def update_damage_animation(self, frames, frame_index):
         if frame_index < len(frames):
@@ -330,6 +374,7 @@ class Boss:
             self.animation_id = self.canvas.after(self.animation_speed, self.update_death_animation, frames, frame_index + 1)
         else:
             self.remove_boss_from_canvas()
+        print("Boss foi derrotado")
 
     def remove_boss_from_canvas(self):
         self.canvas.delete(self.image)

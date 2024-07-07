@@ -43,7 +43,7 @@ class Player:
         self.direction = 'down'
         self.is_moving = False
         self.is_attacking = False
-        self.hp = 200  # Adiciona pontos de vida para o player
+        self.hp = 200  # Pontos de vida do player
         self.boss = boss  # Referência ao boss
         self.is_dead = False  # Verifica se o player está morto
 
@@ -63,6 +63,7 @@ class Player:
         )
 
         self.animate()
+
 
     def animate(self):
         if self.is_dead:
@@ -156,9 +157,10 @@ class Player:
             print("Ataque padrão")
 
             # Verifica se o Player atingiu o Boss
-            boss_coords = self.canvas.coords(self.boss.image)  # Acessa diretamente a imagem do Boss
-            if self.is_near_boss(boss_coords):
-                self.attack_boss()
+            if self.boss.boss_alive:
+                boss_coords = self.canvas.coords(self.boss.image)  # Acessa diretamente a imagem do Boss
+                if self.is_near_boss(boss_coords):
+                    self.attack_boss()
 
     def is_near_boss(self, boss_coords):
         boss_x, boss_y = boss_coords
@@ -182,4 +184,3 @@ class Player:
         self.is_dead = True  # Define a verificação como True
         self.canvas.itemconfig(self.image, image=self.death_image)
         print("Você morreu.")
-

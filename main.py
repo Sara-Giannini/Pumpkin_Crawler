@@ -1,4 +1,3 @@
-
 import tkinter as tk
 import map
 from player import Player, load_gif
@@ -7,17 +6,9 @@ import numpy as np
 import random
 
 class Game:
-    """
-    Classe principal do jogo que comanda a criação do mapa, os inimigos e
-    personagem principal, as interações com objetos no mapa e as animações.
-    """
     def __init__(self, root):
-        """
-        Inicia o jogo.
-        Argumentos:
-            root (tk.Tk): Janela principal do jogo.
-        """
         self.root = root
+        self.root.title("Pumpkin Crawler")
         self.canvas = tk.Canvas(self.root, width=1280, height=720, bg='black')
         self.canvas.pack()
 
@@ -31,8 +22,20 @@ class Game:
         self.lock_state = "keyless_lock"
         self.door_state = "door_closed"
         self.boss_room_visible = False
-        self.player_has_key = False
+        self.player_has_boss_key = False
+        self.player_has_mimic_key = False
         self.boss_movement_active = False
+
+        self.final_chest_x = 250
+        self.final_chest_y = 370
+        self.final_chest_img = tk.PhotoImage(file="assets/final_chest/final_chest.gif", format="gif -index 0")
+        self.final_chest = self.canvas.create_image(self.final_chest_x, self.final_chest_y, image=self.final_chest_img, anchor='nw')
+        self.final_chest_animation_frames = load_gif("assets/final_chest/final_chest.gif")
+        self.final_chest_animated = False
+        self.canvas.tag_raise(self.final_chest)
+
+        self.root.keys_on_canvas = []  # Inicializa a lista para armazenar as chaves presentes no canvas
+        self.keys_collected = []  # Armazena as chaves coletadas
 
         # Criação do mapa, da sala secreta do boss e dos objetos interativos
         map.create_boss_room(self.canvas, visibility="hidden")
@@ -42,17 +45,17 @@ class Game:
         # Posição inicial do baú mímico
         self.mimic_x = 6
         self.mimic_y = 17
-        self.mimic = MimicChest(self.canvas, self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET)
+        self.mimic = MimicChest(self.root, self.canvas, self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET)
 
         # Posição inicial do boss
         self.boss_x = 17
         self.boss_y = 8
-        self.boss = Boss(self.canvas, self.boss_x * map.TILE_SIZE + map.X_OFFSET, self.boss_y * map.TILE_SIZE + map.Y_OFFSET, None)  # Referência ao Player será definida depois
+        self.boss = Boss(self.root, self.canvas, self.boss_x * map.TILE_SIZE + map.X_OFFSET, self.boss_y * map.TILE_SIZE + map.Y_OFFSET, None)  # Referência ao Player será definida depois
 
         # Criação dos inimigos e personagem principal
         self.player = Player(self.canvas, self.player_x * map.TILE_SIZE + map.X_OFFSET, self.player_y * map.TILE_SIZE + map.Y_OFFSET, self.boss)
 
-        # Definindo a referência do jogador no Boss
+        # Defini a referência do jogador no Boss
         self.boss.player = self.player
 
         # Bindings de eventos
@@ -62,8 +65,6 @@ class Game:
 
         self.update_map_for_states()
         self.after_id_mimic = None
-        self.key = None
-        self.key_anim_id = None
 
         # Inicia animações e movimentos
         self.start_mimic_animation()
@@ -76,6 +77,7 @@ class Game:
             event (tk.Event): O evento de pressionamento de tecla.
         """
         if event.keysym == 'e':
+            self.collect_keys()
             self.handle_interaction()
         else:
             self.player.handle_keypress(event)
@@ -95,19 +97,34 @@ class Game:
         except Exception as e:
             print(f"Erro ao processar clique esquerdo: {e}")
 
+    def collect_keys(self):
+        """Verifica se o jogador está na mesma posição que uma chave e a coleta."""
+        try:
+            for key_info in self.root.keys_on_canvas[:]:  # [:] pra copiar a lista e iterar sobre ela
+                key, key_x, key_y, key_type = key_info
+                print(f"Verificando chave em ({key_x}, {key_y}) com tipo {key_type}")
+                if self.is_near_player(key_x, key_y):
+                    print(f"Coletando chave em ({key_x}, {key_y})")
+                    self.canvas.delete(key)  # Remove a chave do canvas
+                    self.root.keys_on_canvas.remove(key_info)  # Remove a chave da lista de chaves no canvas
+                    if key_type == "boss":
+                        self.player_has_boss_key = True  # Corrigi a lógica para definir a variável correta
+                    elif key_type == "mimic":
+                        self.player_has_mimic_key = True  
+        except Exception as e:
+            print(f"Erro ao coletar chave: {e}")
+
     def on_right_click(self, event):
+        mouse_x, mouse_y = event.x, event.y
         """
         Trabalha com eventos de clique do botão direito do mouse.
         Argumentos:
             event (tk.Event): O evento de clique do botão direito do mouse.
         """
-        mouse_x, mouse_y = event.x, event.y
-
         try:
-            # Determina a direção do ataque com base na posição do mouse
             direction = self.get_direction_from_mouse(mouse_x, mouse_y)
-            self.player.direction = direction  # Atualiza a direção do player
-            self.player.attack(mouse_x, mouse_y)  # Realiza o ataque na direção do mouse
+            self.player.direction = direction
+            self.player.attack(mouse_x, mouse_y)
 
             if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
                 direction = self.get_direction(self.mimic_x, self.mimic_y, self.player.x, self.player.y)
@@ -118,13 +135,67 @@ class Game:
                 else:
                     self.mimic.mimic_alive = False
                     self.canvas.delete(self.mimic.image)
-                    self.drop_key()
+                    self.mimic.drop_key()  # Usa o método drop_key do MimicChest para soltar a chave
 
             if self.is_near_player(self.boss.x, self.boss.y):
                 self.boss.attack()
+                if not self.boss.boss_alive:
+                    self.boss.drop_key()  # Usa o método drop_key do Boss para soltar a chave
+                    self.canvas.delete(self.boss.image)  # Remove Boss do canvas
+            if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
+                self.mimic.mimic_moving = True
+                self.start_mimic_animation()
+
+            for key, key_x, key_y, key_type in self.keys_collected:
+                if self.is_near_player(key_x * map.TILE_SIZE + map.X_OFFSET, key_y * map.TILE_SIZE + map.Y_OFFSET):
+                    self.canvas.delete(key)
+                    self.keys_collected.remove((key, key_x, key_y, key_type))
+                    self.player_has_mimic_key = True
+                    if key_type == "boss":
+                        self.player_has_boss_key = True  # Rastrear chaves separadamente
         except Exception as e:
             print(f"Erro ao processar clique direito: {e}")
 
+    def handle_interaction(self):
+        """Trabalha com as interações do jogador com os objetos interativos do mapa."""
+        try:
+            lever_info = map.interactions[self.lever_state]
+            lever_x = lever_info["position"][0] * map.TILE_SIZE + lever_info["position"][2] + map.X_OFFSET
+            lever_y = lever_info["position"][1] * map.TILE_SIZE + lever_info["position"][3] + map.Y_OFFSET
+
+            lock_info = map.interactions[self.lock_state]
+            lock_x = lock_info["position"][0] * map.TILE_SIZE + lock_info["position"][2] + map.X_OFFSET
+            lock_y = lock_info["position"][1] * map.TILE_SIZE + lock_info["position"][3] + map.Y_OFFSET
+
+            print(f"Verificando alavanca em ({lever_x}, {lever_y}) e fechadura em ({lock_x}, {lock_y})")
+
+            if self.is_near_player(lever_x, lever_y):
+                print("Interagindo com a alavanca")
+                self.toggle_lever()
+            elif self.is_near_player(lock_x, lock_y):
+                print("Interagindo com a fechadura")
+                if self.player_has_mimic_key:
+                    self.toggle_lock()
+            elif self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
+                print("Interagindo com o Mimic")
+                self.mimic.mimic_moving = True
+                self.start_mimic_animation()
+
+            for key, key_x, key_y, key_type in self.keys_collected:
+                if self.is_near_player(key_x * map.TILE_SIZE + map.X_OFFSET, key_y * map.TILE_SIZE + map.Y_OFFSET):
+                    print(f"Interagindo com a chave em ({key_x}, {key_y})")
+                    self.canvas.delete(key)
+                    self.keys_collected.remove((key, key_x, key_y, key_type))
+                    self.player_has_mimic_key = True
+                    if key_type == "boss":
+                        self.player_has_boss_key = True  # Rastrear chaves separadamente
+
+            if self.is_near_player(self.final_chest_x, self.final_chest_y):
+                if self.player_has_boss_key and not self.final_chest_animated:
+                    print("Interagindo com o final_chest")
+                    self.animate_final_chest()
+        except Exception as e:
+            print(f"Erro ao processar interação: {e}")
 
     def get_direction_from_mouse(self, mouse_x, mouse_y):
         dx = mouse_x - self.player.x
@@ -140,64 +211,6 @@ class Game:
             if low <= angle < high:
                 return direction
         return 'down'
-
-    def is_near_player(self, x, y):
-        return abs(self.player.x - x) < 20 and abs(self.player.y - y) < 20
-
-    def drop_key(self):
-        """Dropa uma chave na posição onde o baú mímico morreu."""
-        try:
-            self.key_image = load_gif("assets/keys/mimic_key.gif")
-            self.key = self.canvas.create_image(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET, image=self.key_image[0])
-            self.animate_key()
-            self.canvas.tag_raise(self.key)
-        except Exception as e:
-            print(f"Erro ao Dropar chave: {e}")
-
-    def animate_key(self):
-        """Inicia a animação da chave."""
-        try:
-            self.key_anim_id = self.root.after(100, self.update_key_animation)
-        except Exception as e:
-            print(f"Erro ao iniciar animação da chave: {e}")
-
-    def update_key_animation(self):
-        """Atualiza a animação da chave."""
-        try:
-            if self.key_anim_id:
-                self.canvas.after_cancel(self.key_anim_id)
-            self.key_image.append(self.key_image.pop(0))
-            self.canvas.itemconfig(self.key, image=self.key_image[0])
-            self.key_anim_id = self.root.after(100, self.update_key_animation)
-        except Exception as e:
-            print(f"Erro ao atualizar animação da chave: {e}")
-
-    def handle_interaction(self):
-        """Trabalha com as interações do jogador com os objetos interativos do mapa."""
-        try:
-            lever_info = map.interactions[self.lever_state]
-            lever_x = lever_info["position"][0] * map.TILE_SIZE + lever_info["position"][2] + map.X_OFFSET
-            lever_y = lever_info["position"][1] * map.TILE_SIZE + lever_info["position"][3] + map.Y_OFFSET
-
-            lock_info = map.interactions[self.lock_state]
-            lock_x = lock_info["position"][0] * map.TILE_SIZE + lock_info["position"][2] + map.X_OFFSET
-            lock_y = lock_info["position"][1] * map.TILE_SIZE + lock_info["position"][3] + map.Y_OFFSET
-
-            if self.is_near_player(lever_x, lever_y):
-                self.toggle_lever()
-            elif self.is_near_player(lock_x, lock_y):
-                if self.player_has_key:
-                    self.toggle_lock()
-            elif self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
-                self.mimic.mimic_moving = True
-                self.start_mimic_animation()
-
-            if self.key and self.is_near_player(self.canvas.coords(self.key)[0], self.canvas.coords(self.key)[1]):
-                self.canvas.delete(self.key)
-                self.key = None
-                self.player_has_key = True
-        except Exception as e:
-            print(f"Erro ao processar interação: {e}")
 
     def toggle_lever(self):
         """Alterna o estado da alavanca e atualiza o estado do portão."""
@@ -255,6 +268,7 @@ class Game:
 
             map.MAP[gate_y][gate_x] = 0 if self.gate_state == "gate_closed" else 1
             map.MAP[door_y][door_x] = 0 if self.door_state == "door_closed" else 1
+            self.canvas.tag_raise(self.final_chest)
         except Exception as e:
             print(f"Erro ao atualizar mapa para os estados: {e}")
 
@@ -361,8 +375,37 @@ class Game:
             print(f"Erro ao mover item: {e}")
             return x, y
 
+    def animate_final_chest(self):
+        try:
+            self.final_chest_animated = True
+            self.current_final_chest_frame = 0
+            self.update_final_chest_animation()
+        except Exception as e:
+            print(f"Erro ao iniciar animação do final_chest: {e}")
+
+    def update_final_chest_animation(self):
+        try:
+            if self.current_final_chest_frame < len(self.final_chest_animation_frames):
+                self.canvas.itemconfig(self.final_chest, image=self.final_chest_animation_frames[self.current_final_chest_frame])
+                self.current_final_chest_frame += 1
+                self.root.after(100, self.update_final_chest_animation)
+            else:
+                self.end_game()
+        except Exception as e:
+            print(f"Erro ao atualizar animação do final_chest: {e}")
+
+    def end_game(self):
+        print("Jogo terminado. Retornando ao menu principal.")
+        self.root.destroy()
+        start_menu()
+
+
+# Define window como variável global
+window = None
+
 def start_game():
     """Inicia o jogo."""
+    global window
     try:
         window.destroy()
         game_root = tk.Tk()
@@ -371,49 +414,56 @@ def start_game():
     except Exception as e:
         print(f"Erro ao iniciar o jogo: {e}")
 
+def start_menu():
+    """Configuração da janela de Menu Principal."""
+    global window
+    try:
+        window = tk.Tk()
+        window.title("Menu Principal")
+        window.geometry("1920x1080")
+
+        imgs = load_gif("assets/menu/giff.gif")
+
+        canvas_gif = tk.Canvas(window, width=1920, height=1080)
+        canvas_gif.pack()
+
+        label_gif = tk.Label(canvas_gif, image=imgs[0])
+        label_gif.pack()
+
+        index_gif = 0
+
+        def update_gif():
+            """Atualiza a imagem do GIF."""
+            nonlocal index_gif
+            index_gif = (index_gif + 1) % len(imgs)
+            label_gif.config(image=imgs[index_gif])
+            window.after(100, update_gif)
+
+        update_gif()
+
+        img_start = tk.PhotoImage(file="assets/menu/btn_start.png")
+        img_quit = tk.PhotoImage(file="assets/menu/btn_quit.png")
+
+        btn_start = tk.Button(window, image=img_start, command=start_game, borderwidth=0, highlightthickness=0)
+        btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)
+
+        btn_quit = tk.Button(window, image=img_quit, command=quit_game, borderwidth=0, highlightthickness=0)
+        btn_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
+
+        window.mainloop()
+
+    except Exception as e:
+        print(f"Erro ao configurar a janela de Menu Principal: {e}")
+
 def quit_game():
     """Sai do jogo."""
+    global window
     try:
         print("Saindo...")
         window.destroy()
     except Exception as e:
         print(f"Erro ao sair do jogo: {e}")
 
-# Configuração da janela de Mrnu Principal
-try:
-    window = tk.Tk()
-    window.title("Menu Principal")
-    window.geometry("1920x1080")
-
-    imgs = load_gif("assets/menu/giff.gif")
-
-    canvas_gif = tk.Canvas(window, width=1920, height=1080)
-    canvas_gif.pack()
-
-    label_gif = tk.Label(canvas_gif, image=imgs[0])
-    label_gif.pack()
-
-    index_gif = 0
-
-    def update_gif():
-        """Atualiza a imagem do GIF."""
-        global index_gif, imgs
-        index_gif = (index_gif + 1) % len(imgs)
-        label_gif.config(image=imgs[index_gif])
-        window.after(100, update_gif)
-
-    update_gif()
-
-    img_start = tk.PhotoImage(file="assets/menu/btn_start.png")
-    img_quit = tk.PhotoImage(file="assets/menu/btn_quit.png")
-
-    btn_start = tk.Button(window, image=img_start, command=start_game, borderwidth=0, highlightthickness=0)
-    btn_start.place(relx=0.5, rely=0.8, anchor="center", width=150, height=67)
-
-    btn_quit = tk.Button(window, image=img_quit, command=quit_game, borderwidth=0, highlightthickness=0)
-    btn_quit.place(relx=0.5, rely=0.9, anchor="center", width=150, height=67)
-
-    window.mainloop()
-except Exception as e:
-    print(f"Erro ao configurar a janela de Menu Principal: {e}")
- 
+# Iniciar o menu principal ao executar 
+if __name__ == "__main__":
+    start_menu()

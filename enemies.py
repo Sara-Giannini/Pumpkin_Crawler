@@ -5,10 +5,12 @@ import map
 from player import load_gif
 
 class MimicChest:
-    def __init__(self, canvas, x, y):
+    def __init__(self, root, canvas, x, y):
+        self.root = root
         self.canvas = canvas
         self.x = x
         self.y = y
+        self.keys_on_canvas = []
         self.current_frame = 0
         self.mimic_hp = 5
         self.mimic_alive = True
@@ -84,14 +86,66 @@ class MimicChest:
             return map.MAP[tile_y][tile_x] == 1
         return False
 
+    def drop_key(self):
+        """Dropa uma chave na posição onde o baú mímico morreu."""
+        try:
+            self.key_image = load_gif("assets/keys/mimic_key.gif")
+            self.key = self.canvas.create_image(self.x, self.y, image=self.key_image[0])
+            self.canvas.tag_raise(self.key)
+            self.root.keys_on_canvas.append((self.key, self.x, self.y, "mimic"))  # Adiciona a chave à lista de chaves no canvas
+            self.animate_key()
+        except Exception as e:
+            print(f"Erro ao dropar chave: {e}")
+
+    def animate_key(self):
+        """Inicia a animação da chave."""
+        try:
+            self.key_anim_id = self.root.after(100, self.update_key_animation)
+        except Exception as e:
+            print(f"Erro ao iniciar animação da chave: {e}")
+
+    def update_key_animation(self):
+        """Atualiza a animação da chave."""
+        try:
+            if self.key_anim_id:
+                self.canvas.after_cancel(self.key_anim_id)
+            self.key_image.append(self.key_image.pop(0))
+            self.canvas.itemconfig(self.key, image=self.key_image[0])
+            self.key_anim_id = self.root.after(100, self.update_key_animation)
+        except Exception as e:
+            print(f"Erro ao atualizar animação da chave: {e}")
+
+
 
 class Boss:
-    def __init__(self, canvas, x, y, player):
+    def __init__(self, root, canvas, x, y, player):
+        self.root = root
         self.canvas = canvas
         self.x = x
         self.y = y
         self.player = player
-        self.boss_images = {
+        self.keys_on_canvas = []
+        self.boss_images = self.load_animations()
+        self.image = self.canvas.create_image(x, y, image=self.boss_images["move"]["down"][0], state=tk.HIDDEN)
+        self.is_visible = False
+        self.is_moving = False
+        self.boss_alive = True
+        self.boss_hp = 100
+        self.direction = "down"
+        self.animation_speed = 150
+        self.animation_index = 0
+        self.movement_speed = self.animation_speed
+        self.step_size = 2
+        self.attack_cooldown = 1000
+        self.can_attack = True
+        self.animation_id = None
+        self.movement_id = None
+        self.key = None
+        self.key_image = None
+        self.key_anim_id = None
+
+    def load_animations(self):
+        return {
             "move": {
                 "down": self.load_gif("assets/boss/move/boss_move_down.gif"),
                 "left": self.load_gif("assets/boss/move/boss_move_left.gif"),
@@ -112,20 +166,6 @@ class Boss:
             },
             "death": self.load_gif("assets/boss/death/boss_death.gif")
         }
-        self.image = self.canvas.create_image(x, y, image=self.boss_images["move"]["down"][0], state=tk.HIDDEN)
-        self.is_visible = False
-        self.is_moving = False
-        self.boss_alive = True
-        self.boss_hp = 100
-        self.direction = "down"
-        self.animation_speed = 150
-        self.animation_index = 0
-        self.movement_speed = self.animation_speed
-        self.step_size = 2
-        self.attack_cooldown = 1000
-        self.can_attack = True
-        self.animation_id = None
-        self.movement_id = None
 
     def load_gif(self, gif_path):
         return [tk.PhotoImage(file=gif_path, format=f'gif -index {i}') for i in range(4)]
@@ -143,7 +183,7 @@ class Boss:
                 self.move_towards_player()
 
     def move_towards_player(self):
-        if not self.is_visible or not self.is_moving:
+        if not self.is_visible or not self.is_moving or not self.boss_alive:
             return
         player_coords = self.canvas.coords(self.player.image)
         if self.is_near_player(player_coords) and self.can_attack:
@@ -152,6 +192,10 @@ class Boss:
             direction_vector = self.get_direction_vector(player_coords)
             self.update_position(direction_vector)
             self.movement_id = self.canvas.after(self.movement_speed, self.move_towards_player)
+
+    def is_near_player(self, player_coords):
+        player_x, player_y = player_coords
+        return abs(self.x - player_x) < 20 and abs(self.y - player_y) < 20
 
     def update_position(self, direction_vector):
         target_x = self.x + direction_vector[0] * self.step_size
@@ -179,6 +223,8 @@ class Boss:
         return closest_direction
 
     def animate(self):
+        if not self.boss_alive:
+            return
         if self.animation_id is not None:
             self.canvas.after_cancel(self.animation_id)
         frames = self.boss_images["move"][self.direction]
@@ -187,7 +233,7 @@ class Boss:
         self.animation_id = self.canvas.after(self.animation_speed, self.animate)
 
     def attack(self):
-        if not self.is_visible or not self.can_attack:
+        if not self.is_visible or not self.can_attack or not self.boss_alive:
             return
         self.can_attack = False
         if self.movement_id:
@@ -211,12 +257,14 @@ class Boss:
             self.canvas.after(self.attack_cooldown, self.reset_attack)
 
     def reset_attack(self):
-        self.can_attack = True
+        if self.boss_alive:
+            self.can_attack = True
 
     def take_damage(self, direction):
         if self.boss_alive:
             self.boss_hp -= 20
             if self.boss_hp <= 0:
+                self.boss_alive = False
                 self.die()
             else:
                 if self.animation_id is not None:
@@ -232,20 +280,57 @@ class Boss:
             self.animate()
             self.move_towards_player()
 
+    def drop_key(self):
+        """Dropa uma chave na posição onde o boss morreu."""
+        try:
+            self.key_image = self.load_gif("assets/keys/boss_key.gif")
+            self.key = self.canvas.create_image(self.x, self.y, image=self.key_image[0])
+            self.canvas.tag_raise(self.key)
+            self.root.keys_on_canvas.append((self.key, self.x, self.y, "boss"))  # Adiciona a chave à lista de chaves no canvas
+            self.animate_key()
+        except Exception as e:
+            print(f"Erro ao dropar chave: {e}")
+
+    def animate_key(self):
+        """Inicia a animação da chave."""
+        try:
+            self.key_anim_id = self.root.after(100, self.update_key_animation)
+        except Exception as e:
+            print(f"Erro ao iniciar animação da chave: {e}")
+
+    def update_key_animation(self):
+        """Atualiza a animação da chave."""
+        try:
+            if self.key_anim_id:
+                self.canvas.after_cancel(self.key_anim_id)
+            self.key_image.append(self.key_image.pop(0))
+            self.canvas.itemconfig(self.key, image=self.key_image[0])
+            self.key_anim_id = self.root.after(100, self.update_key_animation)
+        except Exception as e:
+            print(f"Erro ao atualizar animação da chave: {e}")
+
     def die(self):
         self.boss_alive = False
         if self.animation_id is not None:
             self.canvas.after_cancel(self.animation_id)
+            self.animation_id = None
+        if self.movement_id is not None:
+            self.canvas.after_cancel(self.movement_id)
+            self.movement_id = None
+        if self.key_anim_id is not None:
+            self.canvas.after_cancel(self.key_anim_id)
+            self.key_anim_id = None
         frames = self.boss_images["death"]
         self.update_death_animation(frames, 0)
+        self.drop_key()
 
     def update_death_animation(self, frames, frame_index):
         if frame_index < len(frames):
             self.canvas.itemconfig(self.image, image=frames[frame_index])
             self.animation_id = self.canvas.after(self.animation_speed, self.update_death_animation, frames, frame_index + 1)
         else:
-            self.canvas.delete(self.image)
+            self.remove_boss_from_canvas()
 
-    def is_near_player(self, player_coords):
-        player_x, player_y = player_coords
-        return abs(self.x - player_x) < 20 and abs(self.y - player_y) < 20
+    def remove_boss_from_canvas(self):
+        self.canvas.delete(self.image)
+        self.image = None  

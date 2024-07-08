@@ -2,11 +2,13 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 
-TILE_SIZE = 32
-X_OFFSET = 0  
+# Constantes de configuração do mapa
+TILE_SIZE = 32 # Tamanho padrão dos tiles
+# Offset horizontal e  Offset vertical para ajustar a posição dos tileset de forma mais detalhada
+X_OFFSET = 0 
 Y_OFFSET = 0  
 
-
+# Definição da estrutura do mapa, [1] para onde a movimentação é permitida, [0] para paredes
 MAP = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -33,6 +35,7 @@ MAP = [
 ]
 
 
+# Tileset com a definição de cada tile e suas respectivas posições e arquivos
 tileset = {
     "wall_1": {"file": "assets/tileset/wall_1.png", "position": (5, 10, 0, 0)},
     "floor_1": {"file": "assets/tileset/floor_1.png", "position": (5, 12, 0, 0)},
@@ -66,6 +69,7 @@ tileset = {
     "shield": {"file": "assets/tileset/shield.png", "position": (27, 7, 0, -8)},
 }
 
+# Elementos interativos do mapa, com suas respectivas posições e tipos
 interactions = {
     "key_lock": {"file": "assets/interactive/key_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
     "keyless_lock": {"file": "assets/interactive/keyless_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
@@ -84,77 +88,107 @@ interactions = {
 
 
 def create_map(canvas):
+    """
+    Cria o mapa no canvas baseado no tileset definido.
+
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde o mapa é desenhado.
+    """
     for item, info in tileset.items():
-        img = Image.open(info["file"])
-        img = ImageTk.PhotoImage(img)
-        canvas.create_image(
-            info["position"][0] * TILE_SIZE + info["position"][2] + X_OFFSET,
-            info["position"][1] * TILE_SIZE + info["position"][3] + Y_OFFSET,
-            image=img, anchor="nw"
-        )
-        if not hasattr(canvas, 'images'):
-            canvas.images = []
-        canvas.images.append(img)
+        try:
+            img = Image.open(info["file"])
+            img = ImageTk.PhotoImage(img)
+            canvas.create_image(
+                info["position"][0] * TILE_SIZE + info["position"][2] + X_OFFSET,
+                info["position"][1] * TILE_SIZE + info["position"][3] + Y_OFFSET,
+                image=img, anchor="nw"
+            )
+            if not hasattr(canvas, 'images'):
+                canvas.images = []
+            canvas.images.append(img)
+        except Exception as e:
+            print(f"Erro ao carregar a imagem {info['file']}: {e}")
 
 def create_interactions(canvas, lever_state, gate_state, lock_state, door_state):
-    lever_info = interactions[lever_state]
-    gate_info = interactions[gate_state]
-    lock_info = interactions[lock_state]
-    door_info = interactions[door_state]
+    """
+    Cria as interações no canvas baseado no estado dos elementos.
 
-    lever_img = Image.open(lever_info["file"])
-    lever_img = ImageTk.PhotoImage(lever_img)
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde as interações serão desenhadas.
+        lever_state (str): Estado da alavanca.
+        gate_state (str): Estado do portão.
+        lock_state (str): Estado da fechadura.
+        door_state (str): Estado da porta.
+    """
+    try:
+        lever_info = interactions[lever_state]
+        gate_info = interactions[gate_state]
+        lock_info = interactions[lock_state]
+        door_info = interactions[door_state]
 
-    gate_img = Image.open(gate_info["file"])
-    gate_img = ImageTk.PhotoImage(gate_img)
-    
-    lock_img = Image.open(lock_info["file"])
-    lock_img = ImageTk.PhotoImage(lock_img)
-    
-    door_img = Image.open(door_info["file"])
-    door_img = ImageTk.PhotoImage(door_img)
+        lever_img = Image.open(lever_info["file"])
+        lever_img = ImageTk.PhotoImage(lever_img)
 
-    lever_id = canvas.create_image(
-        lever_info["position"][0] * TILE_SIZE + lever_info["position"][2] + X_OFFSET,
-        lever_info["position"][1] * TILE_SIZE + lever_info["position"][3] + Y_OFFSET,
-        image=lever_img, anchor="nw", tags=("lever",)
-    )
+        gate_img = Image.open(gate_info["file"])
+        gate_img = ImageTk.PhotoImage(gate_img)
 
-    gate_id = canvas.create_image(
-        gate_info["position"][0] * TILE_SIZE + gate_info["position"][2] + X_OFFSET,
-        gate_info["position"][1] * TILE_SIZE + gate_info["position"][3] + Y_OFFSET,
-        image=gate_img, anchor="nw", tags=("gate",)
-    )
+        lock_img = Image.open(lock_info["file"])
+        lock_img = ImageTk.PhotoImage(lock_img)
 
-    lock_id = canvas.create_image(
-        lock_info["position"][0] * TILE_SIZE + lock_info["position"][2] + X_OFFSET,
-        lock_info["position"][1] * TILE_SIZE + lock_info["position"][3] + Y_OFFSET,
-        image=lock_img, anchor="nw", tags=("lock",)
-    )
+        door_img = Image.open(door_info["file"])
+        door_img = ImageTk.PhotoImage(door_img)
 
-    door_id = canvas.create_image(
-        door_info["position"][0] * TILE_SIZE + door_info["position"][2] + X_OFFSET,
-        door_info["position"][1] * TILE_SIZE + door_info["position"][3] + Y_OFFSET,
-        image=door_img, anchor="nw", tags=("door",)
-    )
-    
-    crate_info = interactions["crate_1"]
-    crate_img = Image.open(crate_info["file"])
-    crate_img = ImageTk.PhotoImage(crate_img)
-    crate_id = canvas.create_image(
-        crate_info["position"][0] * TILE_SIZE + crate_info["position"][2] + X_OFFSET,
-        crate_info["position"][1] * TILE_SIZE + crate_info["position"][3] + Y_OFFSET,
-        image=crate_img, anchor='nw', tags=("crate",)
-    )
+        lever_id = canvas.create_image(
+            lever_info["position"][0] * TILE_SIZE + lever_info["position"][2] + X_OFFSET,
+            lever_info["position"][1] * TILE_SIZE + lever_info["position"][3] + Y_OFFSET,
+            image=lever_img, anchor="nw", tags=("lever",)
+        )
 
-    if not hasattr(canvas, 'images'):
-        canvas.images = []
-    canvas.images.extend([lever_img, gate_img, lock_img, door_img, crate_img])
+        gate_id = canvas.create_image(
+            gate_info["position"][0] * TILE_SIZE + gate_info["position"][2] + X_OFFSET,
+            gate_info["position"][1] * TILE_SIZE + gate_info["position"][3] + Y_OFFSET,
+            image=gate_img, anchor="nw", tags=("gate",)
+        )
+
+        lock_id = canvas.create_image(
+            lock_info["position"][0] * TILE_SIZE + lock_info["position"][2] + X_OFFSET,
+            lock_info["position"][1] * TILE_SIZE + lock_info["position"][3] + Y_OFFSET,
+            image=lock_img, anchor="nw", tags=("lock",)
+        )
+
+        door_id = canvas.create_image(
+            door_info["position"][0] * TILE_SIZE + door_info["position"][2] + X_OFFSET,
+            door_info["position"][1] * TILE_SIZE + door_info["position"][3] + Y_OFFSET,
+            image=door_img, anchor="nw", tags=("door",)
+        )
+
+        crate_info = interactions["crate_1"]
+        crate_img = Image.open(crate_info["file"])
+        crate_img = ImageTk.PhotoImage(crate_img)
+        crate_id = canvas.create_image(
+            crate_info["position"][0] * TILE_SIZE + crate_info["position"][2] + X_OFFSET,
+            crate_info["position"][1] * TILE_SIZE + crate_info["position"][3] + Y_OFFSET,
+            image=crate_img, anchor='nw', tags=("crate",)
+        )
+
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.extend([lever_img, gate_img, lock_img, door_img, crate_img])
+    except Exception as e:
+        print(f"Erro ao criar interações: {e}")
 
 def create_boss_room(canvas, visibility="hidden"):
+    """
+    Cria a sala do Boss no canvas, que irá iniciar "bloqueada" para o jogador nnão visível no canvas.
+
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde a sala do Boss é desenhada.
+        visibility (str): Define a visibilidade dos itens na sala do Boss.
+    """
     boss_room_x_offset = 0
     boss_room_y_offset = 0
 
+    # Todos os tilesets contidos na sala do Boss
     boss_room_tileset = {
         "floor_6": {"file": "assets/tileset/floor_6.png", "position": (12, 5, 0, 0)},
         "wall_7": {"file": "assets/tileset/wall_7.png", "position": (12, 3, 0, 10)},
@@ -164,15 +198,18 @@ def create_boss_room(canvas, visibility="hidden"):
     }
 
     boss_room_items = []
-    for item, info in boss_room_tileset.items():
-        img = Image.open(info["file"])
-        img = ImageTk.PhotoImage(img)
-        item_id = canvas.create_image(
-            info["position"][0] * TILE_SIZE + info["position"][2] + boss_room_x_offset,
-            info["position"][1] * TILE_SIZE + info["position"][3] + boss_room_y_offset,
-            image=img, anchor="nw", state=visibility
-        )
-        boss_room_items.append((item_id, img))
+    try:
+        for item, info in boss_room_tileset.items():
+            img = Image.open(info["file"])
+            img = ImageTk.PhotoImage(img)
+            item_id = canvas.create_image(
+                info["position"][0] * TILE_SIZE + info["position"][2] + boss_room_x_offset,
+                info["position"][1] * TILE_SIZE + info["position"][3] + boss_room_y_offset,
+                image=img, anchor="nw", state=visibility
+            )
+            boss_room_items.append((item_id, img))
+    except Exception as e:
+        print(f"Erro ao criar sala do Boss: {e}")
 
     if not hasattr(canvas, 'boss_room_items'):
         canvas.boss_room_items = boss_room_items
@@ -180,58 +217,115 @@ def create_boss_room(canvas, visibility="hidden"):
         canvas.boss_room_items.extend(boss_room_items)
 
 def toggle_boss_room_visibility(canvas, visibility="hidden"):
+    """
+    Alterna a visibilidade dos itens na sala do Boss.
+
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde a sala do Boss foi desenhada.
+        visibility (str): Define a visibilidade dos itens.
+    """
     for item_id, _ in canvas.boss_room_items:
         canvas.itemconfigure(item_id, state=visibility)
 
 def update_lever_state(canvas, lever_state):
-    lever_info = interactions[lever_state]
-    lever_img = Image.open(lever_info["file"])
-    lever_img = ImageTk.PhotoImage(lever_img)
+    """
+    Atualiza o estado da alavanca no canvas.
 
-    canvas.itemconfig("lever", image=lever_img)
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde a alavanca foi desenhada.
+        lever_state (str): O novo estado da alavanca.
+    """
+    try:
+        lever_info = interactions[lever_state]
+        lever_img = Image.open(lever_info["file"])
+        lever_img = ImageTk.PhotoImage(lever_img)
 
-    if not hasattr(canvas, 'images'):
-        canvas.images = []
-    canvas.images.append(lever_img)
+        canvas.itemconfig("lever", image=lever_img)
+
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.append(lever_img)
+    except Exception as e:
+        print(f"Erro ao atualizar estado da alavanca: {e}")
 
 def update_gate_state(canvas, gate_state):
-    gate_info = interactions[gate_state]
-    gate_img = Image.open(gate_info["file"])
-    gate_img = ImageTk.PhotoImage(gate_img)
+    """
+    Atualiza o estado do portão no canvas.
 
-    canvas.itemconfig("gate", image=gate_img)
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde o portão foi desenhado.
+        gate_state (str): O novo estado do portão.
+    """
+    try:
+        gate_info = interactions[gate_state]
+        gate_img = Image.open(gate_info["file"])
+        gate_img = ImageTk.PhotoImage(gate_img)
 
-    if not hasattr(canvas, 'images'):
-        canvas.images = []
-    canvas.images.append(gate_img)
+        canvas.itemconfig("gate", image=gate_img)
+
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.append(gate_img)
+    except Exception as e:
+        print(f"Erro ao atualizar estado do portão: {e}")
 
 def update_lock_state(canvas, lock_state):
-    lock_info = interactions[lock_state]
-    lock_img = Image.open(lock_info["file"])
-    lock_img = ImageTk.PhotoImage(lock_img)
+    """
+    Atualiza o estado da fechadura no canvas.
 
-    canvas.itemconfig("lock", image=lock_img)
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde a fechadura foi desenhada.
+        lock_state (str): O novo estado da fechadura.
+    """
+    try:
+        lock_info = interactions[lock_state]
+        lock_img = Image.open(lock_info["file"])
+        lock_img = ImageTk.PhotoImage(lock_img)
 
-    if not hasattr(canvas, 'images'):
-        canvas.images = []
-    canvas.images.append(lock_img)
+        canvas.itemconfig("lock", image=lock_img)
+
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.append(lock_img)
+    except Exception as e:
+        print(f"Erro ao atualizar estado da fechadura: {e}")
 
 def update_door_state(canvas, door_state):
-    door_info = interactions[door_state]
-    door_img = Image.open(door_info["file"])
-    door_img = ImageTk.PhotoImage(door_img)
+    """
+    Atualiza o estado da porta no canvas.
 
-    canvas.itemconfig("door", image=door_img)
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde a porta foi desenhada.
+        door_state (str): O novo estado da porta.
+    """
+    try:
+        door_info = interactions[door_state]
+        door_img = Image.open(door_info["file"])
+        door_img = ImageTk.PhotoImage(door_img)
 
-    if not hasattr(canvas, 'images'):
-        canvas.images = []
-    canvas.images.append(door_img)
+        canvas.itemconfig("door", image=door_img)
+
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.append(door_img)
+    except Exception as e:
+        print(f"Erro ao atualizar estado da porta: {e}")
 
 def update_crate_state(canvas, crate_state):
-    crate_info = interactions[crate_state]
-    crate_img = Image.open(crate_info['file'])
-    crate_img = ImageTk.PhotoImage(crate_img)
-    canvas.itemconfig("crate", image=crate_img)
-    if not hasattr(canvas, 'images'):
-        canvas.images = []
-    canvas.images.append(crate_img)
+    """
+    Atualiza o estado do caixote (crate) no canvas.
+
+    Argumentos:
+        canvas (tk.Canvas): O canvas onde o caixote foi desenhado.
+        crate_state (str): O novo estado do caixote.
+    """
+    try:
+        crate_info = interactions[crate_state]
+        crate_img = Image.open(crate_info['file'])
+        crate_img = ImageTk.PhotoImage(crate_img)
+        canvas.itemconfig("crate", image=crate_img)
+        if not hasattr(canvas, 'images'):
+            canvas.images = []
+        canvas.images.append(crate_img)
+    except Exception as e:
+        print(f"Erro ao atualizar de crate: {e}")

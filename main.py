@@ -137,7 +137,7 @@ class Game:
         self.after_id_mimic = None
 
         # Inicia animações e movimentos
-        self.mimic.start_mimic_animation()
+        self.mimic.start_mimic_movement()
         self.boss.start_movement()
         self.schedule_enemy_moves()
 
@@ -195,7 +195,7 @@ class Game:
                     self.canvas.delete(self.boss.image)  # Remove Boss do canvas
             if self.is_near_player(self.mimic_x * map.TILE_SIZE + map.X_OFFSET, self.mimic_y * map.TILE_SIZE + map.Y_OFFSET):
                 self.mimic.mimic_moving = True
-                self.start_mimic_animation()
+                self.start_mimic_movement()
 
             for key, key_x, key_y, key_type in self.keys_collected:
                 if self.is_near_player(key_x * map.TILE_SIZE + map.X_OFFSET, key_y * map.TILE_SIZE + map.Y_OFFSET):

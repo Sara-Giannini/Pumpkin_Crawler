@@ -1,8 +1,10 @@
+import random
 import tkinter as tk
-from PIL import Image, ImageSequence, ImageTk
+from PIL import Image, ImageTk
 import numpy as np
 import map
 from player import load_gif
+
 
 class MimicChest:
     def __init__(self, root, canvas, x, y):
@@ -10,16 +12,15 @@ class MimicChest:
         self.canvas = canvas
         self.x = x
         self.y = y
-        self.keys_on_canvas = []
-        self.current_frame = 0
-        self.hp = 150
-        self.max_hp = 150
+        self.hp = self.max_hp = 150
         self.mimic_alive = True
         self.mimic_moving = False
         self.animations = self.load_animations()
         self.current_animation = self.animations["move_down"]
-        self.image = self.canvas.create_image(self.x, self.y, image=self.current_animation[0])
-        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='orange')
+        self.current_frame = 0
+        self.image = self.canvas.create_image(self.x, self.y, image=self.current_animation[0], anchor='nw')
+        self.after_id_mimic = None
+        self.health_bar = self.canvas.create_rectangle(self.x, self.y - 10, self.x + 50, self.y - 5, fill='orange')
         self.canvas.itemconfig(self.health_bar, state='hidden')
         self.update_animation()
 
@@ -38,14 +39,18 @@ class MimicChest:
     def move(self):
         if self.mimic_alive:
             direction = np.random.choice(["up", "down", "left", "right"])
-            if direction == "up":
-                self.update_position(self.x, self.y - 10)
-            elif direction == "down":
-                self.update_position(self.x, self.y + 10)
-            elif direction == "left":
-                self.update_position(self.x - 10, self.y)
-            elif direction == "right":
-                self.update_position(self.x + 10, self.y)
+            move_offset = {"up": (0, -10), "down": (0, 10), "left": (-10, 0), "right": (10, 0)}
+            dx, dy = move_offset[direction]
+            self.update_position(self.x + dx, self.y + dy)
+
+    def start_mimic_animation(self):
+        """Inicia a animação do baú mímico."""
+        try:
+            if self.after_id_mimic:
+                self.root.after_cancel(self.after_id_mimic)
+            self.update_animation()
+        except Exception as e:
+            print(f"Erro ao iniciar animação do baú mímico: {e}")
 
     def update_animation(self):
         if self.mimic_alive and self.mimic_moving:
@@ -67,10 +72,18 @@ class MimicChest:
         if direction in self.animations:
             self.canvas.after(500, lambda: self.canvas.itemconfig(self.image, image=self.animations[direction][0]))
 
-    def reverse_direction(self, direction):
-        directions = {"up": "down", "down": "up", "left": "right", "right": "left"}
-        return directions.get(direction, "down")
+    def update_position(self, new_x, new_y):
+        self.x = new_x
+        self.y = new_y
+        self.canvas.coords(self.image, self.x, self.y)
+        self.update_health_bar()
 
+    def is_valid_move(self, x, y):
+        tile_x = (x - map.X_OFFSET) // map.TILE_SIZE
+        tile_y = (y - map.Y_OFFSET) // map.TILE_SIZE
+        if 0 <= tile_x < len(map.MAP[0]) and 0 <= tile_y < len(map.MAP):
+            return map.MAP[tile_y][tile_x] == 1
+        return False
 
     def take_damage(self, direction):
         if self.mimic_alive:
@@ -91,12 +104,6 @@ class MimicChest:
         health_ratio = max(self.hp / self.max_hp, 0)
         self.canvas.coords(self.health_bar, self.x, self.y - 10, self.x + health_ratio * 50, self.y - 5)
 
-    def update_position(self, new_x, new_y):
-        self.x = new_x
-        self.y = new_y
-        self.canvas.coords(self.image, self.x, self.y)
-        self.update_health_bar()
-
     def update_damage_animation(self):
         if self.mimic_alive and self.current_frame < len(self.current_animation):
             self.canvas.itemconfig(self.image, image=self.current_animation[self.current_frame])
@@ -108,13 +115,12 @@ class MimicChest:
                 self.current_animation = self.animations["move_down"]
                 self.update_animation()
 
-    def is_valid_move(self, x, y):
-        tile_x = (x - map.X_OFFSET) // map.TILE_SIZE
-        tile_y = (y - map.Y_OFFSET) // map.TILE_SIZE
-        if 0 <= tile_x < len(map.MAP[0]) and 0 <= tile_y < len(map.MAP):
-            return map.MAP[tile_y][tile_x] == 1
-        return False
-
+    def die(self):
+        self.mimic_alive = False
+        self.canvas.delete(self.image)
+        self.canvas.delete(self.health_bar)
+        print("Mimic Chest foi derrotado")
+        self.drop_key()
 
     def drop_key(self):
         """Dropa uma chave na posição onde o baú mímico morreu."""
@@ -144,14 +150,6 @@ class MimicChest:
             self.key_anim_id = self.root.after(100, self.update_key_animation)
         except Exception as e:
             print(f"Erro ao atualizar animação da chave: {e}")
-
-    def die(self):
-        self.mimic_alive = False
-        self.canvas.delete(self.image)
-        self.canvas.delete(self.health_bar)
-        print("Mimic Chest foi derrotado")
-        self.drop_key()
-
 
 
 class Boss:
@@ -332,6 +330,33 @@ class Boss:
             self.animate()
             self.move_towards_player()
 
+    def die(self):
+        self.boss_alive = False
+        if self.animation_id is not None:
+            self.canvas.after_cancel(self.animation_id)
+            self.animation_id = None
+        if self.movement_id is not None:
+            self.canvas.after_cancel(self.movement_id)
+            self.movement_id = None
+        if self.key_anim_id is not None:
+            self.canvas.after_cancel(self.key_anim_id)
+            self.key_anim_id = None
+        frames = self.boss_images["death"]
+        self.update_death_animation(frames, 0)
+        self.drop_key()
+
+    def update_death_animation(self, frames, frame_index):
+        if frame_index < len(frames):
+            self.canvas.itemconfig(self.image, image=frames[frame_index])
+            self.animation_id = self.canvas.after(self.animation_speed, self.update_death_animation, frames, frame_index + 1)
+        else:
+            self.remove_boss_from_canvas()
+        print("Boss foi derrotado")
+
+    def remove_boss_from_canvas(self):
+        self.canvas.delete(self.image)
+        self.image = None  
+
     def drop_key(self):
         """Dropa uma chave na posição onde o boss morreu."""
         try:
@@ -360,30 +385,3 @@ class Boss:
             self.key_anim_id = self.root.after(100, self.update_key_animation)
         except Exception as e:
             print(f"Erro ao atualizar animação da chave: {e}")
-
-    def die(self):
-        self.boss_alive = False
-        if self.animation_id is not None:
-            self.canvas.after_cancel(self.animation_id)
-            self.animation_id = None
-        if self.movement_id is not None:
-            self.canvas.after_cancel(self.movement_id)
-            self.movement_id = None
-        if self.key_anim_id is not None:
-            self.canvas.after_cancel(self.key_anim_id)
-            self.key_anim_id = None
-        frames = self.boss_images["death"]
-        self.update_death_animation(frames, 0)
-        self.drop_key()
-
-    def update_death_animation(self, frames, frame_index):
-        if frame_index < len(frames):
-            self.canvas.itemconfig(self.image, image=frames[frame_index])
-            self.animation_id = self.canvas.after(self.animation_speed, self.update_death_animation, frames, frame_index + 1)
-        else:
-            self.remove_boss_from_canvas()
-        print("Boss foi derrotado")
-
-    def remove_boss_from_canvas(self):
-        self.canvas.delete(self.image)
-        self.image = None  

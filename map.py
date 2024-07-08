@@ -66,7 +66,6 @@ tileset = {
     "shield": {"file": "assets/tileset/shield.png", "position": (27, 7, 0, -8)},
 }
 
-
 interactions = {
     "key_lock": {"file": "assets/interactive/key_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
     "keyless_lock": {"file": "assets/interactive/keyless_lock.png", "position": (8, 16, 5, 5), "type": "lock"},
@@ -96,7 +95,6 @@ def create_map(canvas):
         if not hasattr(canvas, 'images'):
             canvas.images = []
         canvas.images.append(img)
-
 
 def create_interactions(canvas, lever_state, gate_state, lock_state, door_state):
     lever_info = interactions[lever_state]
@@ -153,7 +151,6 @@ def create_interactions(canvas, lever_state, gate_state, lock_state, door_state)
         canvas.images = []
     canvas.images.extend([lever_img, gate_img, lock_img, door_img, crate_img])
 
-
 def create_boss_room(canvas, visibility="hidden"):
     boss_room_x_offset = 0
     boss_room_y_offset = 0
@@ -182,11 +179,9 @@ def create_boss_room(canvas, visibility="hidden"):
     else:
         canvas.boss_room_items.extend(boss_room_items)
 
-
 def toggle_boss_room_visibility(canvas, visibility="hidden"):
     for item_id, _ in canvas.boss_room_items:
         canvas.itemconfigure(item_id, state=visibility)
-
 
 def update_lever_state(canvas, lever_state):
     lever_info = interactions[lever_state]
@@ -199,7 +194,6 @@ def update_lever_state(canvas, lever_state):
         canvas.images = []
     canvas.images.append(lever_img)
 
-
 def update_gate_state(canvas, gate_state):
     gate_info = interactions[gate_state]
     gate_img = Image.open(gate_info["file"])
@@ -211,7 +205,6 @@ def update_gate_state(canvas, gate_state):
         canvas.images = []
     canvas.images.append(gate_img)
 
-
 def update_lock_state(canvas, lock_state):
     lock_info = interactions[lock_state]
     lock_img = Image.open(lock_info["file"])
@@ -222,7 +215,6 @@ def update_lock_state(canvas, lock_state):
     if not hasattr(canvas, 'images'):
         canvas.images = []
     canvas.images.append(lock_img)
-
 
 def update_door_state(canvas, door_state):
     door_info = interactions[door_state]

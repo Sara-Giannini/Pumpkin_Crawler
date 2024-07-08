@@ -3,6 +3,7 @@ from PIL import Image, ImageSequence, ImageTk
 import numpy as np
 import map
 
+
 ANIMATIONS = {
     'idle_down': 'assets/player/idle/idle_down.gif',
     'idle_left': 'assets/player/idle/idle_left.gif',
@@ -18,6 +19,7 @@ ANIMATIONS = {
     'attack_up': 'assets/player/attack/attack_up.gif',
     'death': 'assets/player/death/death.png',
 }
+
 
 def load_gif(gif_path):
     imgs = []
@@ -66,6 +68,9 @@ class Player:
         self.health_bar = self.canvas.create_rectangle(self.x - 10, self.y - 10, self.x + self.hp / self.max_hp * 50, self.y - 5, fill='lightgreen')
         self.animate()
 
+    def is_alive(self):
+        return self.hp > 0
+
     def animate(self):
         if self.is_dead:
             return  # Não faz nada se o player estiver morto
@@ -80,24 +85,6 @@ class Player:
         self.canvas.itemconfig(self.image, image=self.current_animation[self.current_frame])
         self.update_health_bar()
         self.canvas.after(150, self.animate)
-
-    def update_health_bar(self):
-        health_ratio = max(self.hp / self.max_hp, 0)
-        self.canvas.coords(self.health_bar, self.x - 10, self.y - 10, self.x - 10 + health_ratio * 50, self.y - 5)
-
-    def is_alive(self):
-        return self.hp > 0
-
-    def move_towards(self, target_x, target_y):
-        if self.is_dead:
-            return  # Não faz nada se o player estiver morto
-
-        self.target_x = target_x
-        self.target_y = target_y
-
-        if not self.is_moving:
-            self.is_moving = True
-            self.move_to()
 
     def move_to(self):
         if self.is_moving and not self.is_dead:
@@ -131,6 +118,17 @@ class Player:
                     self.canvas.coords(self.image, self.x, self.y)
                     self.game.update_healing_potion_position()  # Atualiza a posição da poção 
                     self.canvas.after(50, self.move_to)
+
+    def move_towards(self, target_x, target_y):
+        if self.is_dead:
+            return  # Não faz nada se o player estiver morto
+
+        self.target_x = target_x
+        self.target_y = target_y
+
+        if not self.is_moving:
+            self.is_moving = True
+            self.move_to()
 
     def is_valid_move(self, x, y):
         tile_x = int((x - map.X_OFFSET) / map.TILE_SIZE)
@@ -182,6 +180,10 @@ class Player:
         if self.hp <= 0:
             self.die()
         self.update_health_bar
+
+    def update_health_bar(self):
+        health_ratio = max(self.hp / self.max_hp, 0)
+        self.canvas.coords(self.health_bar, self.x - 10, self.y - 10, self.x - 10 + health_ratio * 50, self.y - 5)
 
     def die(self):
         self.hp = 0
